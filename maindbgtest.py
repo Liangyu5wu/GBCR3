@@ -84,10 +84,14 @@ def print_bytes_hex(data):
     lin = ['0x%02X' % i for i in data]
     print(" ".join(lin))
 
+def parse_datetime(datetime_str, format="%Y-%m-%d %H:%M:%S")：
+    return datetime.strptime(datetime_str, format)
+
 def generate_summary(store_dict):
     summary_file = f"{store_dict}/summary.txt"
     with open(summary_file, 'w') as summary:
-        summary.write("Channel | Injected Errors | Error Count\n")
+        summary.write("Channel | Injected Errors | Error Count | Start Time | End Time | Duration (min) | Start Inj/Obs | End Inj/Obs | Ninj | Nobs\n")
+        
         for i in range(8):
             ch_file = f"{store_dict}/Ch{i}.TXT"
             if os.path.exists(ch_file):
@@ -95,7 +99,35 @@ def generate_summary(store_dict):
                     lines = infile.readlines()
                     if lines:
                         last_line = lines[-1].strip().split()
-                        summary.write(f"{i} | {last_line[2]} | {last_line[3]}\n")
+                        channel = i
+                        injected_errors = last_line[2]  # Assuming injected errors are at index 2
+                        error_count = last_line[3]  # Assuming error count is at index 3
+                        date_str = last_line[0] + " " + last_line[1]  # Combine date and time
+                        start_time = parse_datetime(date_str)
+                        # You can use last line for end time or handle time more precisely here
+                        end_time = start_time  # Assuming end time is the same for now
+
+                        # Calculate duration (in minutes)
+                        duration_minutes = (end_time - start_time).total_seconds() / 60
+
+                        # Example for inj_gen and inj_obs based on the line structure:
+                        # For this example, assume we can extract start and end inj_gen, inj_obs:
+                        start_inj = last_line[4]  # Assuming injection start is at index 4
+                        start_obs = last_line[5]  # Assuming observation start is at index 5
+                        end_inj = last_line[6]  # Assuming injection end is at index 6
+                        end_obs = last_line[7]  # Assuming observation end is at index 7
+
+                        # Write the summary to the file
+                        summary.write(f"{channel} | {injected_errors} | {error_count} | "
+                                       f"{start_time.strftime('%Y-%m-%d %H:%M:%S')} | "
+                                       f"{end_time.strftime('%Y-%m-%d %H:%M:%S')} | "
+                                       f"{duration_minutes:.1f} | {start_inj} / {start_obs} | "
+                                       f"{end_inj} / {end_obs} | {int(end_inj) - int(start_inj)} | "
+                                       f"{int(end_obs) - int(start_obs)}\n")
+    
+    with open(summary_file, 'r') as f:
+        print(f.read())
+
     print(f"Summary saved to {summary_file}")
 # # define a receive data function
 def Receive_data(store_dict, num_file):
