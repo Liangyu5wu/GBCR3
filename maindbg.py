@@ -12,6 +12,7 @@ import threading
 import numpy as np
 
 from GBCR3_Reg import *
+from numpy.compat import long
 import pyvisa as visa
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
@@ -213,6 +214,59 @@ def Current_monitor():
 
     VCC_Volt = ((VCC_MSB & 0x3f) << 8 | VCC_LSB) * 0.00030518 + 2.5
     return [I12, I34]
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python main.py <num_file>")
+        sys.exit(1)
+
+    num_file = int(sys.argv[1])
+    store_dict = userdefine_dir
+    userdefinedir = "GBCR3_SEE_Test"
+    userdefinedir_log = f"{userdefinedir}_log"
+
+    todaystr = "QAResults_6"
+    timestr = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+    try:
+        os.mkdir(todaystr)
+        print(f"Directory {todaystr} was created!")
+    except FileExistsError:
+        print(f"Directory {todaystr} already exists!")
+
+    userdefine_dir = todaystr + "/" + timestr
+    try:
+        os.mkdir(userdefine_dir)
+    except FileExistsError:
+        print(f"Directory {userdefine_dir} already exists!")
+
+    # Initialize GBCR3_Reg instance
+    GBCR3_Reg1 = GBCR3_Reg()
+    iic_write_val = [0 for i in range(32)]
+
+    # Configure all registers
+    iic_write_val = GBCR3_Reg1.configure_all(iic_write_val)
+
+    print("Line 126, Written values are ", end="")
+    print_bytes_hex(iic_write_val)
+
+    # Write to I2C
+    Slave_Addr = 0x23
+    for i in range(len(iic_write_val)):
+        iic_write(1, Slave_Addr, 0, i, iic_write_val[i])
+    print(f"Written values: {iic_write_val}")
+
+    # Read back data and validate
+    iic_read_val = []
+    for i in range(len(iic_write_val)):
+        iic_read_val += [iic_read(0, Slave_Addr, 1, i)]
+    if iic_read_val == iic_write_val:
+        print(f"Written = Read: {iic_read_val}")
+    else:
+        print(f"Written != Read: {iic_read_val}")
+
+    # Proceed with other tasks like receiving data, etc.
+    Receive_data(store_dict, num_file)
+    print("All jobs done.")
 
 ## if statement
 if __name__ == "__main__":
