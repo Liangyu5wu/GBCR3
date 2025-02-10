@@ -22,6 +22,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+import pandas as pd
+from collections import defaultdict
 
 from crc32_8 import crc32_8
 
@@ -72,113 +74,42 @@ def main():
     print(" line 66, All jobs are done!")
 # end def main
 
-
-# class Receive_data(threading.Thread):  # threading class
-# 20220428 #def __init__(self, name, queue, num_file):
-# def __init__(self, name, store_dict, num_file):
-#    threading.Thread.__init__(self, name=name)
-# 20220428 #self.queue = queue
-#    self.num_file = num_file
-#    self.store_dict = store_dict  # 20220428 #
 def print_bytes_hex(data):
     lin = ['0x%02X' % i for i in data]
     print(" ".join(lin))
 
 def parse_datetime(datetime_str, format="%Y-%m-%d %H:%M:%S"):
-    return datetime.strptime(datetime_str, format)
+    dt_obj = datetime.strptime(datetime_str, format)
+    return int(dt_obj.timestamp())
 
 def generate_summary(store_dict):
-    dump_file = f"{store_dict}/ChAll.TXT"
-    
-    if not os.path.exists(dump_file): 
-        print(f"Error in opening result file: {dump_file}")
-        return
-    else:
-        print(f"Opened dump file: {dump_file}")
-    
-    # DAQ channel numbers for RXout ports
-    max_rx = 7
-    rx_out = [4, 5, 6, 7, 0, 1, 2]
-    
-    # RX/TX channels for DAQ CH*.TXT files
-    max_daq = 9
-    rx_chan = [5, 6, 7, 12, 1, 2, 3, 4, 11]
-    
-    # Initialize arrays
-    start_time = [None] * max_daq
-    end_time = [None] * max_daq
-    chan_event = [0] * max_daq
-    start_gen = [0] * max_daq
-    end_gen = [0] * max_daq
-    start_obs = [0] * max_daq
-    end_obs = [0] * max_daq
+    with open("summary.txt", "w") as f:
+        f.write("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs   Ninj/   Nobs\n")
+  
+        for chan, data in store_dict.items():
+            tstart = datetime.utcfromtimestamp(data['start_time']).strftime('%Y-%m-%d %H:%M:%S')
+            tend = datetime.utcfromtimestamp(data['end_time']).strftime('%H:%M:%S')
+            del_min = (data['end_time'] - data['start_time']) / 60.0 
+            startGen = data['startGen']
+            startObs = data['startObs']
+            endGen = data['endGen']
+            endObs = data['endObs']
+            ninj = data['endGen'] - data['startGen']
+            nobs = data['endObs'] - data['startObs']
+            
+            if chan < 10:
+                ch_chan = f"RX{chan}"
+            else:
+                ch_chan = f"TX{chan-10}"
+            
+            line = (f"Ch{chan} {ch_chan:4} {data['event_count']:5} {tstart} / {tend:9} "
+                    f"{del_min:6.1f} {startGen:6} / {startObs:10}  {endGen:6} / {endObs:10} "
+                    f"{ninj:6} / {nobs:7}\n")
+            
+            f.write(line)
+            
+    print("Summary written to summary.txt")
 
-    # Read the dump file line by line
-    with open(dump_file, 'r') as in_file:
-        lines = in_file.readlines()
-    
-    num_lines = len(lines)
-    print(f"End of file with {num_lines} lines")
-    
-    # Create a summary file
-    summary_file = f"{store_dict}/summary.txt"
-    
-    with open(summary_file, 'w') as summary:
-        summary.write("Channel | Injected Errors | Error Count | Start Time | End Time | Duration (min) | Start Inj/Obs | End Inj/Obs | Ninj | Nobs\n")
-        
-        # Process each line in the dump file
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-            
-            # Parse the line into parameters
-            ch_date_time = line[:26]
-            ch_counters = line[27:]
-            
-            # Assuming the data format is known, use regex or sscanf-like parsing
-            parts = ch_counters.split()
-            chan = int(parts[0])
-            injgen = int(parts[1])
-            injobs = int(parts[2])
-            errmask = int(parts[5], 16)  # Assuming the error mask is a hex value
-
-            # Count errors
-            errcnt = sum(1 for m in range(32) if (errmask & (1 << m)) != 0)
-            
-            # First entry for a channel
-            if chan_event[chan] == 0:
-                start_time[chan] = parse_datetime(ch_date_time)
-                start_gen[chan] = injgen
-                start_obs[chan] = injobs
-            
-            end_time[chan] = parse_datetime(ch_date_time)
-            end_gen[chan] = injgen
-            end_obs[chan] = injobs
-            chan_event[chan] += 1
-            
-            # Calculate duration (in minutes)
-            duration_minutes = (end_time[chan] - start_time[chan]).total_seconds() / 60.0
-
-            # Assuming the line has these fields for start/end injection and observation
-            start_inj = start_gen[chan]
-            start_obs_value = start_obs[chan]
-            end_inj = end_gen[chan]
-            end_obs_value = end_obs[chan]
-            
-            # Write summary to file
-            summary.write(f"{chan} | {errcnt} | {errmask:08x} | "
-                           f"{start_time[chan].strftime('%Y-%m-%d %H:%M:%S')} | "
-                           f"{end_time[chan].strftime('%Y-%m-%d %H:%M:%S')} | "
-                           f"{duration_minutes:.1f} | {start_inj} / {start_obs_value} | "
-                           f"{end_inj} / {end_obs_value} | {end_inj - start_inj} | "
-                           f"{end_obs_value - start_obs_value}\n")
-    
-    # Output the summary to the console
-    with open(summary_file, 'r') as f:
-        print(f.read())
-    
-    print(f"Summary saved to {summary_file}")
 # # define a receive data function
 def Receive_data(store_dict, num_file):
     # begin iic initilization -----------------------------------------------------------------------------------#
