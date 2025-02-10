@@ -84,8 +84,7 @@ def print_bytes_hex(data):
     print(" ".join(lin))
 # # define a receive data function
 def Receive_data(store_dict, num_file):
-    # begin iic initilization ---------------------------------------------------------------------------------
---#
+    # begin iic initilization -----------------------------------------------------------------------------------#
     # write, read back, and compare
 
     Slave_Addr = 0x23
@@ -310,8 +309,7 @@ def exec_data(mem_data, store_dict):
             isEnd = True
         if isEnd:
             break
-        Rawdata = val[0] << (96 + 128) | val[1] << (64 + 128) | val[2] << (32 + 128) | val[3] << 128 | val[
-            4] << 96 | val[5] << 64 | val[6] << 32 | val[7]
+        Rawdata = val[0] << (96 + 128) | val[1] << (64 + 128) | val[2] << (32 + 128) | val[3] << 128 | val[4] << 96 | val[5] << 64 | val[6] << 32 | val[7]
         # end get 8 words
         # if i<200: 
         #  print("i=%5i aligned=%i Rawdata=%x" % (i,aligned,Rawdata) )
@@ -321,40 +319,30 @@ def exec_data(mem_data, store_dict):
         StatChan = val[0]>>27&0xF  
         if aligned == 1:
             error_flag = (
-                                 Rawdata & 0x8000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0
-000_0000_0000) >> (
-                                 127 + 128)  # error flag
+                                 Rawdata & 0x8000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000) >> (127 + 128)  # error flag
 
             # if aligned, display on the screen and save to files
             if error_flag == 1:
                 channel_id = (
-                                     Rawdata & 0x7800_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_00
-00_0000_0000_0000) >> (
+                                     Rawdata & 0x7800_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000) >> (
                                      123 + 128)  # channel Id
                 time_stamp = (
-                                     Rawdata & 0x07ff_ffff_ffff_f800_0000_0000_0000_0000_0000_0000_0000_0000_00
-00_0000_0000_0000) >> (
+                                     Rawdata & 0x07ff_ffff_ffff_f800_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000) >> (
                                      79 + 128 - 4)  # time stamp
                 inject_error = (
-                                       Rawdata & 0x0000_0000_0000_07ff_f800_0000_0000_0000_0000_0000_0000_0000_
-0000_0000_0000_0000) >> (
+                                       Rawdata & 0x0000_0000_0000_07ff_f800_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000) >> (
                                        59 + 128)  # inject error
                 expected_code = (
-                                        Rawdata & 0x0000_0000_0000_0000_07ff_ffff_f800_0000_0000_0000_0000_0000
-_0000_0000_0000_0000) >> (
+                                        Rawdata & 0x0000_0000_0000_0000_07ff_ffff_f800_0000_0000_0000_0000_0000_0000_0000_0000_0000) >> (
                                         27 + 128)
                 received_code = (
-                                        Rawdata & 0x0000_0000_0000_0000_0000_0000_07ff_ffff_f800_0000_0000_0000
-_0000_0000_0000_0000) >> 123  # received data
+                                        Rawdata & 0x0000_0000_0000_0000_0000_0000_07ff_ffff_f800_0000_0000_0000_0000_0000_0000_0000) >> 123  # received data
                 error_position = (
-                                         Rawdata & 0x0000_0000_0000_0000_0000_0000_0000_0000_07ff_ffff_f800_000
-0_0000_0000_0000_0000) >> 91
+                                         Rawdata & 0x0000_0000_0000_0000_0000_0000_0000_0000_07ff_ffff_f800_0000_0000_0000_0000_0000) >> 91
                 error_counter = (
-                                        Rawdata & 0x0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_07ff_ffff
-_ffff_ffff_0000_0000) >> 32
+                                        Rawdata & 0x0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_07ff_ffff_ffff_ffff_0000_0000) >> 32
                 crc32 = (
-                                Rawdata & 0x0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_00
-00_ffff_ffff) >> 0
+                                Rawdata & 0x0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_ffff_ffff) >> 0
                 cal_crc_data = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 ,
                                 0]
@@ -419,11 +407,9 @@ _ffff_ffff_0000_0000) >> 32
                         for k in range(7):
                             val[k] = val[k + 1]
                         val[7] = value
-                        Rawdata = val[0] << (96 + 128) | val[1] << (64 + 128) | val[2] << (32 + 128) | val[
-                            3] << 128 | val[4] << 96 | val[5] << 64 | val[6] << 32 | val[7]
+                        Rawdata = val[0] << (96 + 128) | val[1] << (64 + 128) | val[2] << (32 + 128) | val[3] << 128 | val[4] << 96 | val[5] << 64 | val[6] << 32 | val[7]
                     # end if
-                    if Rawdata == 0x3c5c_7c5c_0000_0000_0000_0000_1234_4321_7d6d_7a5a_0000_0000_0000_0000_5566_
-6655:
+                    if Rawdata == 0x3c5c_7c5c_0000_0000_0000_0000_1234_4321_7d6d_7a5a_0000_0000_0000_0000_5566_6655:
                         #print("aligned here")
                         aligned = 1
                         # Filler frame without channel - use chan=9
@@ -460,8 +446,7 @@ _ffff_ffff_0000_0000) >> 32
         #end for 
         #print non-zero channel stat
         if ChanCnt>0:
-            print(" file summary Chan %i: Aligned Err/OK=%i/%i Not aligned Err/OK=%i/%i" % (m,ChStat[3][m],ChSt
-at[2][m],ChStat[1][m],ChStat[0][m]))
+            print(" file summary Chan %i: Aligned Err/OK=%i/%i Not aligned Err/OK=%i/%i" % (m,ChStat[3][m],ChStat[2][m],ChStat[1][m],ChStat[0][m]))
         #end if
     #end for
     #print(" line 306 %s finished!" % self.name)
@@ -476,10 +461,8 @@ at[2][m],ChStat[1][m],ChStat[0][m]))
 def Current_monitor():
     I2C_Addr = 0x9e >> 1  # I2C address of first LTC2991, note that
 
-    # iic_write(1, I2C_Addr, 0, 0x06, 0x99)       # V1-V2 differential, Filter enabled, V3-V4 differential, Fil
-ter enabled
-    iic_write(1, I2C_Addr, 0, 0x06, 0x11)  # V1-V2 differential, Filter enabled, V3-V4 differential, Filter ena
-bled
+    # iic_write(1, I2C_Addr, 0, 0x06, 0x99)       # V1-V2 differential, Filter enabled, V3-V4 differential, Filter enabled
+    iic_write(1, I2C_Addr, 0, 0x06, 0x11)  # V1-V2 differential, Filter enabled, V3-V4 differential, Filter enabled
     # print(iic_read(0, I2C_Addr, 1, 0x06))       # read back control register
 
     iic_write(1, I2C_Addr, 0, 0x01, 0x38)  # V1-V2 and V3-V4 enabled, VCC and T internal enabled
@@ -550,8 +533,7 @@ def iic_read(mode, slave_addr, wr, reg_addr):
     time.sleep(0.01)
     cmd_interpret.write_pulse_reg(0x0001)  # Sent a pulse to IIC module
 
-    val = mode << 24 | slave_addr << 17 | wr << 16 | reg_addr << 8 | 0x00  # write device addr and read one byt
-e
+    val = mode << 24 | slave_addr << 17 | wr << 16 | reg_addr << 8 | 0x00  # write device addr and read one byte
     cmd_interpret.write_config_reg(4, 0xffff & val)
     cmd_interpret.write_config_reg(5, 0xffff & (val >> 16))
     time.sleep(0.01)
