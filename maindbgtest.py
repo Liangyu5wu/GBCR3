@@ -10,6 +10,7 @@ import socket
 from queue import Queue
 from queue import Empty  ##
 import threading
+import numpy as np
 #from this import i
 
 from numpy.compat import long
@@ -82,135 +83,34 @@ def main():
 def print_bytes_hex(data):
     lin = ['0x%02X' % i for i in data]
     print(" ".join(lin))
+
+def generate_summary(store_dict):
+    summary_file = f"{store_dict}/summary.txt"
+    with open(summary_file, 'w') as summary:
+        summary.write("Channel | Injected Errors | Error Count\n")
+        for i in range(8):
+            ch_file = f"{store_dict}/Ch{i}.TXT"
+            if os.path.exists(ch_file):
+                with open(ch_file, 'r') as infile:
+                    lines = infile.readlines()
+                    if lines:
+                        last_line = lines[-1].strip().split()
+                        summary.write(f"{i} | {last_line[2]} | {last_line[3]}\n")
+    print(f"Summary saved to {summary_file}")
 # # define a receive data function
 def Receive_data(store_dict, num_file):
     # begin iic initilization -----------------------------------------------------------------------------------#
     # write, read back, and compare
 
     Slave_Addr = 0x23
-
-    #GBCR2_Reg1.set_CH1_CML_AmplSel(7)
-    #GBCR2_Reg1.set_CH1_CTLE_MFSR(10)
-    #GBCR2_Reg1.set_CH1_CTLE_HFSR(7)
-
-    # Rx channel 2 settings
-    #GBCR2_Reg1.set_CH2_CML_AmplSel(7)
-    #GBCR2_Reg1.set_CH2_CTLE_MFSR(10)
-    #GBCR2_Reg1.set_CH2_CTLE_HFSR(7)
-
-    # Rx channel 3 settings
-    #GBCR2_Reg1.set_CH3_CML_AmplSel(7)
-    #GBCR2_Reg1.set_CH3_CTLE_MFSR(10)
-    #GBCR2_Reg1.set_CH3_CTLE_HFSR(7)
-
-    # Rx channel 4 settings
-    #GBCR2_Reg1.set_CH4_CML_AmplSel(7)
-    #GBCR2_Reg1.set_CH4_CTLE_MFSR(10)
-    #GBCR2_Reg1.set_CH4_CTLE_HFSR(7)
-
-    # Rx channel 5 settings
-    #GBCR2_Reg1.set_CH5_CML_AmplSel(7)
-    #GBCR2_Reg1.set_CH5_CTLE_MFSR(10)
-    #GBCR2_Reg1.set_CH5_CTLE_HFSR(7)
-
-    # Rx channel 6 settings
-    #GBCR2_Reg1.set_CH6_CML_AmplSel(7)
-    #GBCR2_Reg1.set_CH6_CTLE_MFSR(10)
-    #GBCR2_Reg1.set_CH6_CTLE_HFSR(7)
-
-    # Rx channel 7 settings
-    #GBCR2_Reg1.set_CH7_CML_AmplSel(7)
-    #GBCR2_Reg1.set_CH7_CTLE_MFSR(10)
-    #GBCR2_Reg1.set_CH7_CTLE_HFSR(7)
-
-    # Tx channels 1 and 2 settings
-    #GBCR2_Reg1.set_Tx1_Dis_DL_BIAS(0)
-    #GBCR2_Reg1.set_Tx2_Dis_DL_BIAS(0)
-    
-    # iic_write_val = GBCR2_Reg1.get_config_vector()
-    # Don't understand this register sequence 
-    #iic_write_val = [0x17,0xBB,0xBB,0x75,0x17,0xBB,0xBB,0x75,0x17,0xBB,0xBB,0x75,0x17,0xBB,0xBB,0x75,\
-    #                 0x17,0xBB,0xBB,0x75,0x17,0xBB,0xBB,0x75,0xFF,0xE4,0x40,0xFF,0xE4,0x40,0xF9,0x17]
-
+    GBCR3_Reg1 = GBCR3_Reg()
     print("start GBCR3 reg config")
     
     iic_write_val = [0 for i in range(32)] 
 
     print("declared iic_write_val")
 
-    # Reg 0-23: Common RX[5:0] channel config
-
-    # Reg 0
-    # =1 to disable the RX channel  
-    dis_chan = 0
-    # =1 to disable DC offset cancellation 
-    disLPF   = 0 
-    # MUX bias  (default=8, push for max) 
-    MUX_bias = 0x17 
-    
-    # Reg 1-2: EQ CLTE strengths   
-    # High freq CTLE peaking strength [4:7]  
-    CTLE_MFSR   = 0x8
-    # Middle freq CTLE peaking strength [0:3]  
-    CTLE_HFSR   = 0x8
-
-    # Reg 3 
-    # =1 to disable Low Freq CTLE stage [5:5] 
-    dis_EQ_LF   = 0
-    # LF attenuator removed for GBCR3   
-    # EQ_ATT      = 0x3
-    # output amplitude [0:2]
-    CML_AmplSel = 0x7
-    # DLL Clock delays for EQ mode
-    # (Probably need separate calibrated values for retime mode)   
-    dllClkDelay = 0x5
-
-    # GBCR3 register map for only 6 RX channels 
-    for i in range(6):
-        iic_write_val[4*i]   = (dis_chan<<6) | (disLPF<<5) | MUX_bias
-        iic_write_val[4*i+1] = (CTLE_HFSR<<4) | CTLE_HFSR   
-        iic_write_val[4*i+2] = (CTLE_HFSR<<4) | CTLE_MFSR   
-        iic_write_val[4*i+3] = (dis_EQ_LF<<7) | (CML_AmplSel<<4) | dllClkDelay  
-    #end for
-
-    print("configured iic_write_val RX params")
-
-    # special treatment for Ch2/PCIE5/RXout7 
-    #iic_write_val[3*6+1] = (0xf<<4) | 0xf
-    
-    # Reg 24-29: TX config
-    # SC2,SC1 default 1,7
-    txSC1          = 0xF
-    txSC2          = 0xF
-    # SR2,SR1 default 0x19,0x19
-    txSR1          = 0x4
-    txSR2          = 0x10
-    txAmp          = 0x7
-    disPreEmp      = 0
-    disTXbias      = 0
-    for i in range(2):
-        iic_write_val[3*i+24] = (txSC2<<4) | txSC1
-        iic_write_val[3*i+25] = (txAmp<<5) | txSR1
-        iic_write_val[3*i+26] = (txSR2<<2) | (disPreEmp<<1) | disTXbias
-    #end for    
-
-    print("configured iic_write_val TX params")
-
-    # Reg 30: external eRX 1.28 GHz Clock control
-    clk_Rx_En              = 1
-    dis_clk_Tx             = 1
-    # default clk_Tx_Delay = 0 
-    clk_Tx_Delay      = 0 
-    iic_write_val[30] = (clk_Rx_En<<5) | (clk_Tx_Delay<<1) | dis_clk_Tx
-
-    # Reg 31  
-    dllCapReset          = 0
-    dllEnable            = 1
-    dllForceDown         = 0
-    dllChargePumpCurrent = 0x8 
-    iic_write_val[31]    =  (dllChargePumpCurrent<<3) | (dllForceDown<<2) | (dllEnable<<1) | dllCapReset  
-
-    print("configured iic_write_val phase params")
+    iic_write_val = GBCR3_Reg1.configure_all(iic_write_val)
     
     print("Line 126, Written values are ", end = "")
     print_bytes_hex(iic_write_val)
@@ -272,6 +172,7 @@ def Receive_data(store_dict, num_file):
         # 20220428 #    self.queue.put(mem_data[i])
     # end for files in range(self.num_file)
     print("line 181, 'Receive_data' finished!")
+    generate_summary(store_dict)
     # 20220428 #self.queue.put(-1)
 # end def run
 # ---------------------------------------------------------------------------------------------#
