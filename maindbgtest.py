@@ -88,46 +88,96 @@ def parse_datetime(datetime_str, format="%Y-%m-%d %H:%M:%S"):
     return datetime.strptime(datetime_str, format)
 
 def generate_summary(store_dict):
+    dump_file = f"{store_dict}/ChAll.TXT"
+    
+    if not os.path.exists(dump_file): 
+        print(f"Error in opening result file: {dump_file}")
+        return
+    else:
+        print(f"Opened dump file: {dump_file}")
+    
+    # DAQ channel numbers for RXout ports
+    max_rx = 7
+    rx_out = [4, 5, 6, 7, 0, 1, 2]
+    
+    # RX/TX channels for DAQ CH*.TXT files
+    max_daq = 9
+    rx_chan = [5, 6, 7, 12, 1, 2, 3, 4, 11]
+    
+    # Initialize arrays
+    start_time = [None] * max_daq
+    end_time = [None] * max_daq
+    chan_event = [0] * max_daq
+    start_gen = [0] * max_daq
+    end_gen = [0] * max_daq
+    start_obs = [0] * max_daq
+    end_obs = [0] * max_daq
+
+    # Read the dump file line by line
+    with open(dump_file, 'r') as in_file:
+        lines = in_file.readlines()
+    
+    num_lines = len(lines)
+    print(f"End of file with {num_lines} lines")
+    
+    # Create a summary file
     summary_file = f"{store_dict}/summary.txt"
+    
     with open(summary_file, 'w') as summary:
         summary.write("Channel | Injected Errors | Error Count | Start Time | End Time | Duration (min) | Start Inj/Obs | End Inj/Obs | Ninj | Nobs\n")
         
-        for i in range(8):
-            ch_file = f"{store_dict}/Ch{i}.TXT"
-            if os.path.exists(ch_file):
-                with open(ch_file, 'r') as infile:
-                    lines = infile.readlines()
-                    if lines:
-                        last_line = lines[-1].strip().split()
-                        channel = i
-                        injected_errors = last_line[2]  # Assuming injected errors are at index 2
-                        error_count = last_line[3]  # Assuming error count is at index 3
-                        date_str = last_line[0] + " " + last_line[1]  # Combine date and time
-                        start_time = parse_datetime(date_str)
-                        # You can use last line for end time or handle time more precisely here
-                        end_time = start_time  # Assuming end time is the same for now
+        # Process each line in the dump file
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            
+            # Parse the line into parameters
+            ch_date_time = line[:26]
+            ch_counters = line[27:]
+            
+            # Assuming the data format is known, use regex or sscanf-like parsing
+            parts = ch_counters.split()
+            chan = int(parts[0])
+            injgen = int(parts[1])
+            injobs = int(parts[2])
+            errmask = int(parts[5], 16)  # Assuming the error mask is a hex value
 
-                        # Calculate duration (in minutes)
-                        duration_minutes = (end_time - start_time).total_seconds() / 60
+            # Count errors
+            errcnt = sum(1 for m in range(32) if (errmask & (1 << m)) != 0)
+            
+            # First entry for a channel
+            if chan_event[chan] == 0:
+                start_time[chan] = parse_datetime(ch_date_time)
+                start_gen[chan] = injgen
+                start_obs[chan] = injobs
+            
+            end_time[chan] = parse_datetime(ch_date_time)
+            end_gen[chan] = injgen
+            end_obs[chan] = injobs
+            chan_event[chan] += 1
+            
+            # Calculate duration (in minutes)
+            duration_minutes = (end_time[chan] - start_time[chan]).total_seconds() / 60.0
 
-                        # Example for inj_gen and inj_obs based on the line structure:
-                        # For this example, assume we can extract start and end inj_gen, inj_obs:
-                        start_inj = last_line[4]  # Assuming injection start is at index 4
-                        start_obs = last_line[5]  # Assuming observation start is at index 5
-                        end_inj = last_line[6]  # Assuming injection end is at index 6
-                        end_obs = last_line[7]  # Assuming observation end is at index 7
-
-                        # Write the summary to the file
-                        summary.write(f"{channel} | {injected_errors} | {error_count} | "
-                                       f"{start_time.strftime('%Y-%m-%d %H:%M:%S')} | "
-                                       f"{end_time.strftime('%Y-%m-%d %H:%M:%S')} | "
-                                       f"{duration_minutes:.1f} | {start_inj} / {start_obs} | "
-                                       f"{end_inj} / {end_obs} | {int(end_inj) - int(start_inj)} | "
-                                       f"{int(end_obs) - int(start_obs)}\n")
+            # Assuming the line has these fields for start/end injection and observation
+            start_inj = start_gen[chan]
+            start_obs_value = start_obs[chan]
+            end_inj = end_gen[chan]
+            end_obs_value = end_obs[chan]
+            
+            # Write summary to file
+            summary.write(f"{chan} | {errcnt} | {errmask:08x} | "
+                           f"{start_time[chan].strftime('%Y-%m-%d %H:%M:%S')} | "
+                           f"{end_time[chan].strftime('%Y-%m-%d %H:%M:%S')} | "
+                           f"{duration_minutes:.1f} | {start_inj} / {start_obs_value} | "
+                           f"{end_inj} / {end_obs_value} | {end_inj - start_inj} | "
+                           f"{end_obs_value - start_obs_value}\n")
     
+    # Output the summary to the console
     with open(summary_file, 'r') as f:
         print(f.read())
-
+    
     print(f"Summary saved to {summary_file}")
 # # define a receive data function
 def Receive_data(store_dict, num_file):
