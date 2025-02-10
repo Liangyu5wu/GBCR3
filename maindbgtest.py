@@ -380,8 +380,7 @@ def exec_data(mem_data, store_dict):
                 count = count + 1
                 if count % 1000000 == 0:
                     print("received data is filler: %x" % Rawdata)
-                if Rawdata != 0x3c5c_7c5c_0000_0000_0000_0000_1234_4321_7d6d_7a5a_0000_0000_0000_0000_5566_6655
-:
+                if Rawdata != 0x3c5c_7c5c_0000_0000_0000_0000_1234_4321_7d6d_7a5a_0000_0000_0000_0000_5566_6655:
                     aligned = 0
                     print("Line 276, ALignment loss Rawdata is %x" % Rawdata)
                 # Current frame state reevaluated
