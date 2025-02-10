@@ -115,7 +115,7 @@ class GBCR3_Reg(object):
         else:
             raise KeyError(f"Register {name} not found in register map.")
 
-    ## Example: setting channel-specific parameters
+    ## Setting channel-specific parameters
     def set_channel_params(self, channel, CML_AmplSel=None, EQ_ATT=None, CTLE_MFSR=None, CTLE_HFSR=None):
         if 1 <= channel <= 7:
             if CML_AmplSel is not None:
