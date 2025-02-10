@@ -84,7 +84,7 @@ def print_bytes_hex(data):
     lin = ['0x%02X' % i for i in data]
     print(" ".join(lin))
 
-def parse_datetime(datetime_str, format="%Y-%m-%d %H:%M:%S")：
+def parse_datetime(datetime_str, format="%Y-%m-%d %H:%M:%S"):
     return datetime.strptime(datetime_str, format)
 
 def generate_summary(store_dict):
