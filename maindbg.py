@@ -12,7 +12,6 @@ import threading
 import numpy as np
 
 from GBCR3_Reg import *
-from numpy.compat import long
 import pyvisa as visa
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
