@@ -85,34 +85,54 @@ def parse_datetime(datetime_str, format="%Y-%m-%d %H:%M:%S"):
 def DateTime(timestamp, format="%Y-%m-%d %H:%M:%S"):
     return time.strftime(format, time.localtime(timestamp))
 
+import os
+from datetime import datetime
+
 def generate_summary(store_dict):
-    print(f"Store dictionary content: {store_dict}")  # Debugging line
+    print(f"Store directory: {store_dict}")  # Debugging line
+
     with open("summary.txt", "w") as f:
         f.write("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs   Ninj/   Nobs\n")
-        for chan, data in store_dict.items():
-            print(f"Processing channel {chan}")  # Debugging line
-            tstart = DateTime(data['start_time'])
-            tend = DateTime(data['end_time'], "%H:%M:%S")
-            del_min = (data['end_time'] - data['start_time']) / 60.0 
-            startGen = data['startGen']
-            startObs = data['startObs']
-            endGen = data['endGen']
-            endObs = data['endObs']
-            ninj = data['endGen'] - data['startGen']
-            nobs = data['endObs'] - data['startObs']
-            
-            if chan < 10:
-                ch_chan = f"RX{chan}"
-            else:
-                ch_chan = f"TX{chan-10}"
-            
-            line = (f"Ch{chan} {ch_chan:4} {data['event_count']:5} {tstart} / {tend:9} "
-                    f"{del_min:6.1f} {startGen:6} / {startObs:10}  {endGen:6} / {endObs:10} "
-                    f"{ninj:6} / {nobs:7}")
-            
-            print(line)
-            f.write(line + "\n")
+        
+        for filename in os.listdir(store_dict):
+            if filename.endswith(".txt"):
+                file_path = os.path.join(store_dict, filename)
+                print(f"Processing file: {file_path}")  # Debugging line
+                
+                with open(file_path, 'r') as file:
+                    data = file.readlines()
+                
+                for line in data:
+                    parts = line.split()
+                    if len(parts) < 10: 
+                        continue
+                    
+                    chan = int(parts[0][2:]) 
+                    event_count = int(parts[2])
+                    start_time = datetime.strptime(parts[3], "%H:%M:%S") 
+                    end_time = datetime.strptime(parts[4], "%H:%M:%S")
+                    del_min = (end_time - start_time).total_seconds() / 60.0
+                    startGen = int(parts[5])
+                    startObs = int(parts[6])
+                    endGen = int(parts[7])
+                    endObs = int(parts[8])
+                    ninj = endGen - startGen
+                    nobs = endObs - startObs
+                    
+                    if chan < 10:
+                        ch_chan = f"RX{chan}"
+                    else:
+                        ch_chan = f"TX{chan-10}"
+
+                    line_output = (f"Ch{chan} {ch_chan:4} {event_count:5} {start_time.strftime('%H:%M:%S')} / {end_time.strftime('%H:%M:%S'):9} "
+                                   f"{del_min:6.1f} {startGen:6} / {startObs:10}  {endGen:6} / {endObs:10} "
+                                   f"{ninj:6} / {nobs:7}")
+                    
+                    print(line_output)
+                    f.write(line_output + "\n")
+    
     print("Summary written to summary.txt")
+
 
 
 # # define a receive data function
