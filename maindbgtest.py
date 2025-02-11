@@ -129,14 +129,14 @@ def generate_summary(result_dir):
                 if (ErrMask & (1 << m)) != 0:
                     errcnt += 1
 
-        #     if chan_event[chan] == 0:
-        #         try:
-        #             start_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
-        #         except ValueError as e:
-        #             print(f"Error parsing datetime: {ch_date_time}. Error: {e}")
-        #             continue
-        #         start_gen[chan] = injgen
-        #         start_obs[chan] = injobs
+            if chan_event[chan] == 0:
+                try:
+                    start_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
+                except ValueError as e:
+                    print(f"Error parsing datetime: {ch_date_time}. Error: {e}")
+                    continue
+                start_gen[chan] = injgen
+                start_obs[chan] = injobs
 
         #     try:
         #         end_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
