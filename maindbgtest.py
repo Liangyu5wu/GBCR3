@@ -27,13 +27,7 @@ from collections import defaultdict
 
 from crc32_8 import crc32_8
 
-'''
-@author: Wei Zhang
-@date: 2020-11-14
-This script is used to test GBCR3 SEU. It mainly includes I2C communication, Ethernet communication, and eight 
-channels bit error record.
-'''
-hostname = '192.168.2.6'  # FPGA IP address
+hostname = '192.168.2.6'  # Fixed FPGA IP address
 port = 1024  # port number
 
 # ---------------------------
@@ -93,6 +87,7 @@ def generate_summary(store_dict):
     
     # 打开 summary.txt 文件来写入总结
     with open(summary_file_path, "w") as f:
+        # 写入标题行
         f.write("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs   Ninj/   Nobs\n")
         
         # 遍历目录中的所有文件
@@ -105,10 +100,10 @@ def generate_summary(store_dict):
                 with open(file_path, 'r') as file:
                     data = file.readlines()
                 
-                # 这里假设每个文件的内容按行存储数据
+                # 解析每个文件的内容
                 for line in data:
-                    # 假设每一行数据的格式是以空格分隔的，提取数据并进行格式化
-                    parts = line.split()
+                    parts = line.split()  # 按空格分隔
+                    
                     if len(parts) < 10:  # 确保行的数据是完整的
                         continue
                     
@@ -141,8 +136,6 @@ def generate_summary(store_dict):
                     f.write(line_output + "\n")
     
     print(f"Summary written to {summary_file_path}")
-
-
 
 
 # # define a receive data function
