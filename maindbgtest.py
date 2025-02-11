@@ -73,100 +73,89 @@ def print_bytes_hex(data):
     print(" ".join(lin))
 
 def generate_summary(result_dir):
+    summary_file = f"{result_dir}/summary.txt"
     
-    dump_file = f"{result_dir}/ChAll.TXT"
-    if os.path.exists(dump_file):
-        with open(dump_file, 'r') as in_file:
-            print(f"Opened dump file: {dump_file}") 
-            lines = in_file.readlines()
-    else:
-        print(f"Error in opening result file: {dump_file}")
-        return  
-    
-    max_rx = 7
-    rxout = [4, 5, 6, 7, 0, 1, 2]
-
-    max_daq = 9
-    rxchan = [5, 6, 7, 12, 1, 2, 3, 4, 11]
-
-    start_time = [None] * max_daq
-    end_time = [None] * max_daq
-    chan_event = [0] * max_daq
-    start_gen = [0] * max_daq
-    end_gen = [0] * max_daq
-    start_obs = [0] * max_daq
-    end_obs = [0] * max_daq
-
-    max_frame = 2000
-
-    num_line = 0
-    ind_frame = 0
-    dbg = True 
-    
-    with open(f"{result_dir}/summary.txt", 'w') as out_file:
-        out_file.write("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs    Ninj/   Nobs\n")
-
-        for line in lines:
-            num_line += 1
-            if dbg:
-                print(line.strip())
-            if not line.strip():
-                continue
-
-            ch_date_time = line[:26]
-            ch_counters = line[27:].strip()
-            tokens = ch_counters.split()
-
-            try:
-                chan, injgen, injobs, delCRC, timeStamp, expCode, obsCode, ErrMask, CDC32 = ( int(tokens[0]), int(tokens[1]), int(tokens[2]), int(tokens[3]), 
-                int(tokens[4]), int(tokens[5], 16), int(tokens[6], 16), int(tokens[7], 16), int(tokens[8]))
-            except ValueError as e:
-                print(f"Error parsing line: {line}. Error: {e}")
-                continue
-
-            errcnt = 0
-            for m in range(32):
-                if (ErrMask & (1 << m)) != 0:
-                    errcnt += 1
-
-            if chan_event[chan] == 0:
-                try:
-                    start_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
-                except ValueError as e:
-                    print(f"Error parsing datetime: {ch_date_time}. Error: {e}")
-                    continue
-                start_gen[chan] = injgen
-                start_obs[chan] = injobs
-
-            try:
-                end_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
-            except ValueError as e:
-                print(f"Error parsing datetime: {ch_date_time}. Error: {e}")
-            continue  
+    with open(summary_file, 'w') as summary:
+        summary.write("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs    Ninj/   Nobs\n")
         
-        end_gen[chan] = injgen
-        end_obs[chan] = injobs
-        chan_event[chan] += 1
+        for chan in range(9): 
+            ch_file = f"{result_dir}/Ch{chan}.TXT"
+            
+            if os.path.exists(ch_file):
+                with open(ch_file, 'r') as infile:
+                    lines = infile.readlines()
 
-        out_file.write(f"End of file with {num_line} lines.\n")
-        out_file.write("End Run Summary\n")
+                    start_time = None
+                    end_time = None
+                    start_gen = 0
+                    end_gen = 0
+                    start_obs = 0
+                    end_obs = 0
+                    chan_event = 0
 
-        for j in range(max_daq):
-            ch_chan = f"RX{rxchan[j]}" if rxchan[j] < 10 else f"TX{rxchan[j] - 10}"
+                    for line in lines:
+                        if not line.strip():
+                            continue
+        
+                        ch_date_time = line[:26]
+                        ch_counters = line[27:].strip()
+                        tokens = ch_counters.split()
+                        
+                        try:
+                            chan_val, injgen, injobs, delCRC, timeStamp, expCode, obsCode, ErrMask, CDC32 = (
+                                int(tokens[0]), int(tokens[1]), int(tokens[2]), int(tokens[3]), 
+                                int(tokens[4]), int(tokens[5], 16), int(tokens[6], 16),
+                                int(tokens[7], 16), int(tokens[8])
+                            )
+                        except ValueError as e:
+                            print(f"Error parsing line: {line}. Error: {e}")
+                            continue 
 
-            if chan_event[j] == 0:
-                out_file.write(f"Ch{j} {ch_chan:4} {chan_event[j]:5}\n")
+                        if chan_val != chan:
+                            continue  
+
+                        errcnt = 0
+                        for m in range(32):
+                            if (ErrMask & (1 << m)) != 0:
+                                errcnt += 1
+
+                        if chan_event == 0:
+                            try:
+                                start_time = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
+                            except ValueError as e:
+                                print(f"Error parsing datetime: {ch_date_time}. Error: {e}")
+                                continue
+                            start_gen = injgen
+                            start_obs = injobs
+
+                        try:
+                            end_time = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
+                        except ValueError as e:
+                            print(f"Error parsing datetime: {ch_date_time}. Error: {e}")
+                            continue
+                        
+                        end_gen = injgen
+                        end_obs = injobs
+                        chan_event += 1
+                    
+                    if chan_event > 0:
+                        if start_time and end_time:
+                            del_minute = (end_time - start_time).total_seconds() / 60
+                        else:
+                            del_minute = 0
+                        
+                        tstart = start_time.strftime("%Y-%m-%d %H:%M:%S") if start_time else "N/A"
+                        tend = end_time.strftime("%H:%M:%S") if end_time else "N/A"
+
+                        summary.write(f"Ch{chan} RX{chan:4} {chan_event:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
+                                       f"{start_gen:6} / {start_obs:10}  {end_gen:6} / {end_obs:10}  "
+                                       f"{end_gen - start_gen:6} / {end_obs - start_obs:7}\n")
+                    else:
+                        summary.write(f"Ch{chan} RX{chan:4} {chan_event:5} No events recorded.\n")
             else:
-                tstart = datetime.fromtimestamp(start_time[j]).strftime("%Y-%m-%d %H:%M:%S")
-                tend = datetime.fromtimestamp(end_time[j]).strftime("%H:%M:%S")
-
-                del_minute = (end_time[j] - start_time[j]) / 60
-
-                out_file.write(f"Ch{j} {ch_chan:4} {chan_event[j]:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
-                               f"{start_gen[j]:6} / {start_obs[j]:10}  {end_gen[j]:6} / {end_obs[j]:10}  "
-                               f"{end_gen[j] - start_gen[j]:6} / {end_obs[j] - start_obs[j]:7}\n")
-
-    print(f"Summary written to {result_dir}/summary.txt")
+                summary.write(f"Ch{chan} RX{chan:4} {0:5} File not found.\n")
+    
+    print(f"Summary saved to {summary_file}")
 
 
 
