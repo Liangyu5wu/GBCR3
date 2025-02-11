@@ -84,7 +84,7 @@ def format_datetime(time_val, format_str):
 def generate_summary(result_dir):
     """GBCR QC/SEU error injection counter summary"""
     
-    dump_file = f"QAResults/{result_dir}/ChAll.TXT"
+    dump_file = f"{result_dir}/ChAll.TXT"
     
     if not os.path.exists(dump_file):
         print(f"Error in opening result file: {dump_file}")
