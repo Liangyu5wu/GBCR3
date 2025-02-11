@@ -81,79 +81,79 @@ def generate_summary(result_dir):
         for chan in range(9): 
             ch_file = f"{result_dir}/Ch{chan}.TXT"
             
-            if os.path.exists(ch_file):
-                with open(ch_file, 'r') as infile:
-                    lines = infile.readlines()
+            # if os.path.exists(ch_file):
+            #     with open(ch_file, 'r') as infile:
+            #         lines = infile.readlines()
 
-                    start_time = None
-                    end_time = None
-                    start_gen = 0
-                    end_gen = 0
-                    start_obs = 0
-                    end_obs = 0
-                    chan_event = 0
+            #         start_time = None
+            #         end_time = None
+            #         start_gen = 0
+            #         end_gen = 0
+            #         start_obs = 0
+            #         end_obs = 0
+            #         chan_event = 0
 
-                    for line in lines:
-                        if not line.strip():
-                            continue
+            #         for line in lines:
+            #             if not line.strip():
+            #                 continue
         
-                        ch_date_time = line[:26]
-                        ch_counters = line[27:].strip()
-                        tokens = ch_counters.split()
+            #             ch_date_time = line[:26]
+            #             ch_counters = line[27:].strip()
+            #             tokens = ch_counters.split()
                         
-                        try:
-                            chan_val, injgen, injobs, delCRC, timeStamp, expCode, obsCode, ErrMask, CDC32 = (
-                                int(tokens[0]), int(tokens[1]), int(tokens[2]), int(tokens[3]), 
-                                int(tokens[4]), int(tokens[5], 16), int(tokens[6], 16),
-                                int(tokens[7], 16), int(tokens[8])
-                            )
-                        except ValueError as e:
-                            print(f"Error parsing line: {line}. Error: {e}")
-                            continue 
+            #             try:
+            #                 chan_val, injgen, injobs, delCRC, timeStamp, expCode, obsCode, ErrMask, CDC32 = (
+            #                     int(tokens[0]), int(tokens[1]), int(tokens[2]), int(tokens[3]), 
+            #                     int(tokens[4]), int(tokens[5], 16), int(tokens[6], 16),
+            #                     int(tokens[7], 16), int(tokens[8])
+            #                 )
+            #             except ValueError as e:
+            #                 print(f"Error parsing line: {line}. Error: {e}")
+            #                 continue 
 
-                        if chan_val != chan:
-                            continue  
+            #             if chan_val != chan:
+            #                 continue  
 
-                        errcnt = 0
-                        for m in range(32):
-                            if (ErrMask & (1 << m)) != 0:
-                                errcnt += 1
+            #             errcnt = 0
+            #             for m in range(32):
+            #                 if (ErrMask & (1 << m)) != 0:
+            #                     errcnt += 1
 
-                        if chan_event == 0:
-                            try:
-                                start_time = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
-                            except ValueError as e:
-                                print(f"Error parsing datetime: {ch_date_time}. Error: {e}")
-                                continue
-                            start_gen = injgen
-                            start_obs = injobs
+            #             if chan_event == 0:
+            #                 try:
+            #                     start_time = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
+            #                 except ValueError as e:
+            #                     print(f"Error parsing datetime: {ch_date_time}. Error: {e}")
+            #                     continue
+            #                 start_gen = injgen
+            #                 start_obs = injobs
 
-                        try:
-                            end_time = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
-                        except ValueError as e:
-                            print(f"Error parsing datetime: {ch_date_time}. Error: {e}")
-                            continue
+            #             try:
+            #                 end_time = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
+            #             except ValueError as e:
+            #                 print(f"Error parsing datetime: {ch_date_time}. Error: {e}")
+            #                 continue
                         
-                        end_gen = injgen
-                        end_obs = injobs
-                        chan_event += 1
+            #             end_gen = injgen
+            #             end_obs = injobs
+            #             chan_event += 1
                     
-                    if chan_event > 0:
-                        if start_time and end_time:
-                            del_minute = (end_time - start_time).total_seconds() / 60
-                        else:
-                            del_minute = 0
+            #         if chan_event > 0:
+            #             if start_time and end_time:
+            #                 del_minute = (end_time - start_time).total_seconds() / 60
+            #             else:
+            #                 del_minute = 0
                         
-                        tstart = start_time.strftime("%Y-%m-%d %H:%M:%S") if start_time else "N/A"
-                        tend = end_time.strftime("%H:%M:%S") if end_time else "N/A"
+            #             tstart = start_time.strftime("%Y-%m-%d %H:%M:%S") if start_time else "N/A"
+            #             tend = end_time.strftime("%H:%M:%S") if end_time else "N/A"
 
-                        summary.write(f"Ch{chan} RX{chan:4} {chan_event:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
-                                       f"{start_gen:6} / {start_obs:10}  {end_gen:6} / {end_obs:10}  "
-                                       f"{end_gen - start_gen:6} / {end_obs - start_obs:7}\n")
-                    else:
-                        summary.write(f"Ch{chan} RX{chan:4} {chan_event:5} No events recorded.\n")
-            else:
-                summary.write(f"Ch{chan} RX{chan:4} {0:5} File not found.\n")
+            #             summary.write(f"Ch{chan} RX{chan:4} {chan_event:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
+            #                            f"{start_gen:6} / {start_obs:10}  {end_gen:6} / {end_obs:10}  "
+            #                            f"{end_gen - start_gen:6} / {end_obs - start_obs:7}\n")
+            #         else:
+            #             summary.write(f"Ch{chan} RX{chan:4} {chan_event:5} No events recorded.\n")
+            # else:
+            #     summary.write(f"Ch{chan} RX{chan:4} {0:5} File not found.\n")
     
     print(f"Summary saved to {summary_file}")
 
