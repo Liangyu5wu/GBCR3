@@ -86,13 +86,11 @@ def DateTime(timestamp, format="%Y-%m-%d %H:%M:%S"):
     return time.strftime(format, time.localtime(timestamp))
 
 def generate_summary(store_dict):
-    # Open the file in append mode so that we don't overwrite existing content
+    print(f"Store dictionary content: {store_dict}")  # Debugging line
     with open("summary.txt", "w") as f:
         f.write("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs   Ninj/   Nobs\n")
-        
-        print("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs   Ninj/   Nobs")
-        
         for chan, data in store_dict.items():
+            print(f"Processing channel {chan}")  # Debugging line
             tstart = DateTime(data['start_time'])
             tend = DateTime(data['end_time'], "%H:%M:%S")
             del_min = (data['end_time'] - data['start_time']) / 60.0 
@@ -112,13 +110,10 @@ def generate_summary(store_dict):
                     f"{del_min:6.1f} {startGen:6} / {startObs:10}  {endGen:6} / {endObs:10} "
                     f"{ninj:6} / {nobs:7}")
             
-            # Print summary to the console
             print(line)
-            
-            # Write summary to the file
             f.write(line + "\n")
-
     print("Summary written to summary.txt")
+
 
 # # define a receive data function
 def Receive_data(store_dict, num_file):
