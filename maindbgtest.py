@@ -90,9 +90,21 @@ def generate_summary(store_dict):
         # 写入标题行
         f.write("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs   Ninj/   Nobs\n")
         
-        # 遍历目录中的所有文件
+        # DAQ channel numbers for RXout ports
+        maxDAQ = 9
+        RXchan = [5, 6, 7, 12, 1, 2, 3, 4, 11]
+        
+        startTime = [0] * maxDAQ
+        endTime = [0] * maxDAQ
+        chanEvent = [0] * maxDAQ
+        startGen = [0] * maxDAQ
+        endGen = [0] * maxDAQ
+        startObs = [0] * maxDAQ
+        endObs = [0] * maxDAQ
+        
+        # 只处理符合 "Ch" 开头并后接数字的文件
         for filename in os.listdir(store_dict):
-            if filename.endswith(".txt"):  # 确保是 .txt 文件
+            if filename.endswith(".TXT") and filename.startswith("Ch") and filename[2:].isdigit():
                 file_path = os.path.join(store_dict, filename)
                 print(f"Processing file: {file_path}")  # Debugging line
                 
@@ -110,28 +122,38 @@ def generate_summary(store_dict):
                     # 从文件行中提取信息
                     chan = int(parts[0][2:])  # 从 "Ch0" 获取 0，假设格式是 Ch0, Ch1, ...
                     event_count = int(parts[2])
-                    start_time = datetime.strptime(parts[3], "%H:%M:%S")  # 假设时间是 "HH:MM:SS" 格式
-                    end_time = datetime.strptime(parts[4], "%H:%M:%S")
-                    del_min = (end_time - start_time).total_seconds() / 60.0
-                    startGen = int(parts[5])
-                    startObs = int(parts[6])
-                    endGen = int(parts[7])
-                    endObs = int(parts[8])
-                    ninj = endGen - startGen
-                    nobs = endObs - startObs
+                    ch_date_time = parts[3]  # 例如 "2025-02-10 16:52:44"
+                    injgen = int(parts[5])
+                    injobs = int(parts[6])
+                    ErrMask = int(parts[7], 16)  # 假设 ErrMask 是16进制表示
+                    # 计算时间差和事件信息
+                    tstart = parseDateTime(ch_date_time, "%F %T")
+                    tend = parseDateTime(parts[4], "%T")
+                    del_min = (tend - tstart) / 60.0
                     
-                    # 根据 chan 值来确定 RX 或 TX 类型
+                    # 保存数据
+                    if chanEvent[chan] == 0:
+                        startTime[chan] = tstart
+                        startGen[chan] = injgen
+                        startObs[chan] = injobs
+                    
+                    endTime[chan] = tend
+                    endGen[chan] = injgen
+                    endObs[chan] = injobs
+                    chanEvent[chan] += 1
+                    
+                    # 格式化输出行
                     if chan < 10:
                         ch_chan = f"RX{chan}"
                     else:
-                        ch_chan = f"TX{chan-10}"
-                    
-                    # 构建输出行
-                    line_output = (f"Ch{chan} {ch_chan:4} {event_count:5} {start_time.strftime('%H:%M:%S')} / {end_time.strftime('%H:%M:%S'):9} "
-                                   f"{del_min:6.1f} {startGen:6} / {startObs:10}  {endGen:6} / {endObs:10} "
-                                   f"{ninj:6} / {nobs:7}")
+                        ch_chan = f"TX{chan - 10}"
                     
                     # 打印并写入文件
+                    start_time_str = DateTime(startTime[chan], "%F %T")
+                    end_time_str = DateTime(endTime[chan], "%T")
+                    line_output = (f"Ch{chan} {ch_chan:4} {event_count:5} {start_time_str} / {end_time_str:9} "
+                                   f"{del_min:6.1f} {startGen[chan]:6} / {startObs[chan]:10}  {endGen[chan]:6} / {endObs[chan]:10} "
+                                   f"{endGen[chan] - startGen[chan]:6} / {endObs[chan] - startObs[chan]:7}")
                     print(line_output)
                     f.write(line_output + "\n")
     
