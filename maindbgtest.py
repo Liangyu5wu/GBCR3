@@ -72,83 +72,88 @@ def print_bytes_hex(data):
     lin = ['0x%02X' % i for i in data]
     print(" ".join(lin))
 
-def parse_datetime(datetime_string):
-    """
-    解析日期时间字符串，返回时间戳
-    """
-    # 转换格式为time.struct_time对象
-    dt = time.strptime(datetime_string, "%Y-%m-%d %H:%M:%S")
-    # 返回时间戳
-    return time.mktime(dt)
+def parse_datetime(datetime_string, format_str):
+    try:
+        return time.mktime(time.strptime(datetime_string, format_str))
+    except ValueError:
+        return None
+
+def format_datetime(time_val, format_str):
+    return time.strftime(format_str, time.localtime(time_val))
 
 def generate_summary(result_dir):
-    """
-    生成 SEU 错误注入计数器汇总，保存为 summary.txt
-    """
-    # 初始化相关数据结构
+    """GBCR QC/SEU error injection counter summary"""
+    
+    dump_file = f"QAResults/{result_dir}/ChAll.TXT"
+    
+    if not os.path.exists(dump_file):
+        print(f"Error in opening result file: {dump_file}")
+        return
+    else:
+        print(f"Opened dump file: {dump_file}")
+    
     max_daq = 9
-    chan_event = [0] * max_daq
+    RXchan = [5, 6, 7, 12, 1, 2, 3, 4, 11]
+    
     start_time = [0] * max_daq
     end_time = [0] * max_daq
+    chan_event = [0] * max_daq
     start_gen = [0] * max_daq
-    end_gen = [0] * max_daq
     start_obs = [0] * max_daq
+    end_gen = [0] * max_daq
     end_obs = [0] * max_daq
     
-    # 定义相关常量
-    RXchan = [5, 6, 7, 12, 1, 2, 3, 4, 11]
-
-    summary_file = os.path.join(result_dir, "summary.txt")
+    numline = 0
+    DBG = 1
     
-    # 打开 summary.txt 文件
-    with open(summary_file, 'w') as summary:
-        summary.write("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs    Ninj/   Nobs\n")
+    # Loop over config file lines
+    with open(dump_file, 'r') as in_file:
+        for line in in_file:
+            numline += 1
+            if DBG:
+                print(line.strip())
+            
+            # Parse lines into parameters
+            if line.strip():
+                ch_date_time = line[:26]
+                ch_counters = line[27:].strip()
+                
+                # Extract data from the counters string
+                try:
+                    chan, injgen, injobs, delCRC, timeStamp, expCode, obsCode, ErrMask, CDC32 = map(int, ch_counters.split())
+                except ValueError:
+                    continue
+                
+                errcnt = 0
+                for m in range(32):
+                    if (ErrMask & (1 << m)) != 0:
+                        errcnt += 1
+                
+                # First entry of a channel
+                if chan_event[chan] == 0:
+                    start_time[chan] = parse_datetime(ch_date_time, "%F %T")
+                    start_gen[chan] = injgen
+                    start_obs[chan] = injobs
+                
+                end_time[chan] = parse_datetime(ch_date_time, "%F %T")
+                end_gen[chan] = injgen
+                end_obs[chan] = injobs
+                chan_event[chan] += 1
+    
+    print(f"End of file with {numline} lines")
+    print("End Run Summary")
+    print(f"{'DAQ':<4} {'Lane':<6} {'Nevt':<5} {'Date time':<17} {'Start/End':<12} {'dT(min)':<8} {'Start Inj/Obs':<15} {'End Inj/Obs':<15} {'Ninj':<8} {'Nobs':<8}")
+    
+    for j in range(max_daq):
+        ch_chan = f"RX{RXchan[j]}" if RXchan[j] < 10 else f"TX{RXchan[j]-10}"
         
-        # 遍历结果目录中的所有文件
-        for file_name in os.listdir(result_dir):
-            if file_name.startswith("Ch") and file_name.endswith(".TXT"):
-                dump_file = os.path.join(result_dir, file_name)
-                print(f"Processing file: {dump_file}")
-                
-                # 读取数据文件
-                with open(dump_file, 'r') as in_file:
-                    numline = 0
-                    for line in in_file:
-                        numline += 1
-                        if line.strip():  # 如果行非空
-                            ch_date_time = line[:26]  # 获取日期时间
-                            ch_counters = line[27:]  # 获取计数器数据
-                            
-                            # 解析计数器信息
-                            chan, injgen, injobs, del_crc, timestamp, exp_code, obs_code, err_mask, cdc32 = map(int, ch_counters.split())
-                            
-                            # 计算错误计数
-                            errcnt = bin(err_mask).count('1')
-                            
-                            # 第一次读取该通道的数据
-                            if chan_event[chan] == 0:
-                                start_time[chan] = parse_datetime(ch_date_time)
-                                start_gen[chan] = injgen
-                                start_obs[chan] = injobs
-                            
-                            # 更新结束时间
-                            end_time[chan] = parse_datetime(ch_date_time)
-                            end_gen[chan] = injgen
-                            end_obs[chan] = injobs
-                            chan_event[chan] += 1
-                    
-                    # 汇总每个通道的数据并写入 summary 文件
-                    for j in range(max_daq):
-                        if chan_event[j] > 0:
-                            tstart = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time[j]))
-                            tend = time.strftime("%H:%M:%S", time.localtime(end_time[j]))
-                            del_minute = (end_time[j] - start_time[j]) / 60
-                            
-                            summary.write(f"Ch{j} {RXchan[j]:4} {chan_event[j]:5} {tstart} / {tend:9} {del_minute:6.1f} {start_gen[j]:6} / {start_obs[j]:10}  {end_gen[j]:6} / {end_obs[j]:10}  {end_gen[j] - start_gen[j]:6} / {end_obs[j] - start_obs[j]:7}\n")
-                
-                print(f"Processed {numline} lines in {dump_file}")
-    
-    print("Summary written to summary.txt")
+        if chan_event[j] == 0:
+            print(f"Ch{j:<2} {ch_chan:<4} {chan_event[j]:<5}")
+        else:
+            tstart = format_datetime(start_time[j], "%F %T")
+            tend = format_datetime(end_time[j], "%T")
+            del_minute = (end_time[j] - start_time[j]) / 60.0
+            print(f"Ch{j:<2} {ch_chan:<4} {chan_event[j]:<5} {tstart:<17}/{tend:<9} {del_minute:6.1f} {start_gen[j]:6}/{start_obs[j]:10} {end_gen[j]:6}/{end_obs[j]:10} {end_gen[j] - start_gen[j]:6}/{end_obs[j] - start_obs[j]:7}")
 
 
 # # define a receive data function
