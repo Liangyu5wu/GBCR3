@@ -86,37 +86,39 @@ def DateTime(timestamp, format="%Y-%m-%d %H:%M:%S"):
     return time.strftime(format, time.localtime(timestamp))
 
 def generate_summary(store_dict):
-    print("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs   Ninj/   Nobs")
-    
-    for chan, data in store_dict.items():
-        tstart = DateTime(data['start_time'])
-        tend = DateTime(data['end_time'], "%H:%M:%S")
-        del_min = (data['end_time'] - data['start_time']) / 60.0 
-        startGen = data['startGen']
-        startObs = data['startObs']
-        endGen = data['endGen']
-        endObs = data['endObs']
-        ninj = data['endGen'] - data['startGen']
-        nobs = data['endObs'] - data['startObs']
+    # Open the file in append mode so that we don't overwrite existing content
+    with open("summary.txt", "w") as f:
+        f.write("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs   Ninj/   Nobs\n")
         
-        if chan < 10:
-            ch_chan = f"RX{chan}"
-        else:
-            ch_chan = f"TX{chan-10}"
+        print("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs   Ninj/   Nobs")
         
-        line = (f"Ch{chan} {ch_chan:4} {data['event_count']:5} {tstart} / {tend:9} "
-                f"{del_min:6.1f} {startGen:6} / {startObs:10}  {endGen:6} / {endObs:10} "
-                f"{ninj:6} / {nobs:7}")
-        
-        # Print summary to the console
-        print(line)
-
-        # Write summary to a file
-        with open("summary.txt", "w") as f:
-            f.write("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs   Ninj/   Nobs\n")
+        for chan, data in store_dict.items():
+            tstart = DateTime(data['start_time'])
+            tend = DateTime(data['end_time'], "%H:%M:%S")
+            del_min = (data['end_time'] - data['start_time']) / 60.0 
+            startGen = data['startGen']
+            startObs = data['startObs']
+            endGen = data['endGen']
+            endObs = data['endObs']
+            ninj = data['endGen'] - data['startGen']
+            nobs = data['endObs'] - data['startObs']
+            
+            if chan < 10:
+                ch_chan = f"RX{chan}"
+            else:
+                ch_chan = f"TX{chan-10}"
+            
+            line = (f"Ch{chan} {ch_chan:4} {data['event_count']:5} {tstart} / {tend:9} "
+                    f"{del_min:6.1f} {startGen:6} / {startObs:10}  {endGen:6} / {endObs:10} "
+                    f"{ninj:6} / {nobs:7}")
+            
+            # Print summary to the console
+            print(line)
+            
+            # Write summary to the file
             f.write(line + "\n")
 
-    print("Summary printed to console and written to summary.txt")
+    print("Summary written to summary.txt")
 
 # # define a receive data function
 def Receive_data(store_dict, num_file):
