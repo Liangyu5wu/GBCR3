@@ -85,9 +85,6 @@ def parse_datetime(datetime_str, format="%Y-%m-%d %H:%M:%S"):
 def DateTime(timestamp, format="%Y-%m-%d %H:%M:%S"):
     return time.strftime(format, time.localtime(timestamp))
 
-import os
-from datetime import datetime
-
 def generate_summary(store_dict):
     print(f"Store directory: {store_dict}")  # Debugging line
     
