@@ -76,10 +76,13 @@ def parse_datetime(datetime_string, format_str):
     try:
         return time.mktime(time.strptime(datetime_string, format_str))
     except ValueError:
+        print(f"Error parsing datetime: {datetime_string}")
         return None
 
 def format_datetime(time_val, format_str):
-    return time.strftime(format_str, time.localtime(time_val))
+    if time_val:
+        return time.strftime(format_str, time.localtime(time_val))
+    return "Invalid Time"
 
 def generate_summary(result_dir):
     """GBCR QC/SEU error injection counter summary"""
@@ -122,6 +125,7 @@ def generate_summary(result_dir):
                 try:
                     chan, injgen, injobs, delCRC, timeStamp, expCode, obsCode, ErrMask, CDC32 = map(int, ch_counters.split())
                 except ValueError:
+                    print(f"Skipping line due to parsing error: {line}")
                     continue
                 
                 errcnt = 0
@@ -152,9 +156,20 @@ def generate_summary(result_dir):
         else:
             tstart = format_datetime(start_time[j], "%F %T")
             tend = format_datetime(end_time[j], "%T")
-            del_minute = (end_time[j] - start_time[j]) / 60.0
-            print(f"Ch{j:<2} {ch_chan:<4} {chan_event[j]:<5} {tstart:<17}/{tend:<9} {del_minute:6.1f} {start_gen[j]:6}/{start_obs[j]:10} {end_gen[j]:6}/{end_obs[j]:10} {end_gen[j] - start_gen[j]:6}/{end_obs[j] - start_obs[j]:7}")
-
+            
+            # Only calculate delta if both start_time and end_time are valid
+            if tstart and tend:
+                del_minute = (end_time[j] - start_time[j]) / 60.0
+            else:
+                del_minute = 0.0
+            
+            # Handle cases where values might be None
+            start_inj_obs = f"{start_gen[j]}/{start_obs[j]}"
+            end_inj_obs = f"{end_gen[j]}/{end_obs[j]}"
+            ninj = end_gen[j] - start_gen[j]
+            nobs = end_obs[j] - start_obs[j]
+            
+            print(f"Ch{j:<2} {ch_chan:<4} {chan_event[j]:<5} {tstart:<17}/{tend:<9} {del_minute:6.1f} {start_inj_obs:6} {end_inj_obs:10} {ninj:6} {nobs:7}")
 
 # # define a receive data function
 def Receive_data(store_dict, num_file):
