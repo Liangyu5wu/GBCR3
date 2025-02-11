@@ -106,12 +106,12 @@ def generate_summary(result_dir):
     with open(f"{result_dir}/summary.txt", 'w') as out_file:
         out_file.write("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs    Ninj/   Nobs\n")
 
-        # for line in lines:
-        #     num_line += 1
-        #     if dbg:
-        #         print(line.strip())
-        #     if not line.strip():
-        #         continue
+        for line in lines:
+            num_line += 1
+            if dbg:
+                print(line.strip())
+            if not line.strip():
+                continue
 
         #     ch_date_time = line[:26]
         #     ch_counters = line[27:].strip()
