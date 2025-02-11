@@ -85,28 +85,40 @@ def parse_datetime(datetime_str, format="%Y-%m-%d %H:%M:%S"):
 def DateTime(timestamp, format="%Y-%m-%d %H:%M:%S"):
     return time.strftime(format, time.localtime(timestamp))
 
+import os
+from datetime import datetime
+
 def generate_summary(store_dict):
     print(f"Store directory: {store_dict}")  # Debugging line
-
-    with open("summary.txt", "w") as f:
+    
+    # 设置 summary.txt 文件的完整路径，确保它写入到 store_dict 目录中
+    summary_file_path = os.path.join(store_dict, "summary.txt")
+    
+    # 打开 summary.txt 文件来写入总结
+    with open(summary_file_path, "w") as f:
         f.write("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs   Ninj/   Nobs\n")
         
+        # 遍历目录中的所有文件
         for filename in os.listdir(store_dict):
-            if filename.endswith(".txt"):
+            if filename.endswith(".txt"):  # 确保是 .txt 文件
                 file_path = os.path.join(store_dict, filename)
                 print(f"Processing file: {file_path}")  # Debugging line
                 
+                # 读取文件内容
                 with open(file_path, 'r') as file:
                     data = file.readlines()
                 
+                # 这里假设每个文件的内容按行存储数据
                 for line in data:
+                    # 假设每一行数据的格式是以空格分隔的，提取数据并进行格式化
                     parts = line.split()
-                    if len(parts) < 10: 
+                    if len(parts) < 10:  # 确保行的数据是完整的
                         continue
                     
-                    chan = int(parts[0][2:]) 
+                    # 从文件行中提取信息
+                    chan = int(parts[0][2:])  # 从 "Ch0" 获取 0，假设格式是 Ch0, Ch1, ...
                     event_count = int(parts[2])
-                    start_time = datetime.strptime(parts[3], "%H:%M:%S") 
+                    start_time = datetime.strptime(parts[3], "%H:%M:%S")  # 假设时间是 "HH:MM:SS" 格式
                     end_time = datetime.strptime(parts[4], "%H:%M:%S")
                     del_min = (end_time - start_time).total_seconds() / 60.0
                     startGen = int(parts[5])
@@ -116,19 +128,23 @@ def generate_summary(store_dict):
                     ninj = endGen - startGen
                     nobs = endObs - startObs
                     
+                    # 根据 chan 值来确定 RX 或 TX 类型
                     if chan < 10:
                         ch_chan = f"RX{chan}"
                     else:
                         ch_chan = f"TX{chan-10}"
-
+                    
+                    # 构建输出行
                     line_output = (f"Ch{chan} {ch_chan:4} {event_count:5} {start_time.strftime('%H:%M:%S')} / {end_time.strftime('%H:%M:%S'):9} "
                                    f"{del_min:6.1f} {startGen:6} / {startObs:10}  {endGen:6} / {endObs:10} "
                                    f"{ninj:6} / {nobs:7}")
                     
+                    # 打印并写入文件
                     print(line_output)
                     f.write(line_output + "\n")
     
-    print("Summary written to summary.txt")
+    print(f"Summary written to {summary_file_path}")
+
 
 
 
