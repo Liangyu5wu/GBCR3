@@ -99,9 +99,6 @@ def generate_summary(result_dir):
 
     max_frame = 2000
 
-    h_errcnt = np.zeros((33, 9))
-    h_errmask = np.zeros((32, 9))
-
     num_line = 0
     ind_frame = 0
     dbg = True 
@@ -113,33 +110,43 @@ def generate_summary(result_dir):
             num_line += 1
             if dbg:
                 print(line.strip())
-
             if not line.strip():
                 continue
 
             ch_date_time = line[:26]
             ch_counters = line[27:].strip()
             tokens = ch_counters.split()
-            chan, injgen, injobs, delCRC, timeStamp, expCode, obsCode, ErrMask, CDC32 = map(int, tokens[:5]) + list(map(lambda x: int(x, 16), tokens[5:8])) + [int(tokens[8])]
+
+            try:
+                chan, injgen, injobs, delCRC, timeStamp, expCode, obsCode, ErrMask, CDC32 = ( int(tokens[0]), int(tokens[1]), int(tokens[2]), int(tokens[3]), 
+                int(tokens[4]), int(tokens[5], 16), int(tokens[6], 16), int(tokens[7], 16), int(tokens[8]))
+            except ValueError as e:
+                print(f"Error parsing line: {line}. Error: {e}")
+                continue
 
             errcnt = 0
             for m in range(32):
                 if (ErrMask & (1 << m)) != 0:
                     errcnt += 1
-                    h_errmask[m, chan] += 1
-
-            h_errcnt[errcnt, chan] += 1
 
             if chan_event[chan] == 0:
-                start_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S").timestamp()
+                try:
+                    start_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
+                except ValueError as e:
+                    print(f"Error parsing datetime: {ch_date_time}. Error: {e}")
+                    continue
                 start_gen[chan] = injgen
                 start_obs[chan] = injobs
 
-            end_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S").timestamp()
-            end_gen[chan] = injgen
-            end_obs[chan] = injobs
-
-            chan_event[chan] += 1
+            try:
+                end_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
+            except ValueError as e:
+                print(f"Error parsing datetime: {ch_date_time}. Error: {e}")
+            continue  
+        
+        end_gen[chan] = injgen
+        end_obs[chan] = injobs
+        chan_event[chan] += 1
 
         out_file.write(f"End of file with {num_line} lines.\n")
         out_file.write("End Run Summary\n")
