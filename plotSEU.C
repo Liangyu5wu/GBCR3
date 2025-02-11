@@ -82,8 +82,7 @@ void plotSEU(const string result_dir) {
       sscanf(ch_counters.c_str(),"%i %i %i %i %i %x %x %x %i",&chan, &injgen, &injobs, &delCRC, &timeStamp, &expCode, &obsCode, &ErrM
 ask, &CDC32);
 
-      //printf("%s ch=%i inj gen/obs=%i/%i Code exp/obs/errmask=%08x/%08x/%08x\n", ch_date_time.c_str(), chan, injgen,injobs, expCode
-, obsCode, ErrMask);  
+      //printf("%s ch=%i inj gen/obs=%i/%i Code exp/obs/errmask=%08x/%08x/%08x\n", ch_date_time.c_str(), chan, injgen,injobs, expCode, obsCode, ErrMask);  
 
       int errcnt = 0; 
       for(int m=0;m<32;m++) {
