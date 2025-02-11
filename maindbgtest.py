@@ -73,103 +73,102 @@ def print_bytes_hex(data):
     print(" ".join(lin))
 
 def parse_datetime(datetime_string, format_str):
-    try:
-        return time.mktime(time.strptime(datetime_string, format_str))
-    except ValueError:
-        print(f"Error parsing datetime: {datetime_string}")
-        return None
+    dt_obj = datetime.strptime(datetime_string, format_str)
+    return dt_obj.timestamp()
 
-def format_datetime(time_val, format_str):
-    if time_val:
-        return time.strftime(format_str, time.localtime(time_val))
-    return "Invalid Time"
+def format_datetime(timestamp, format_str):
+    dt_obj = datetime.fromtimestamp(timestamp)
+    return dt_obj.strftime(format_str)
 
 def generate_summary(result_dir):
-    """GBCR QC/SEU error injection counter summary"""
     
     dump_file = f"{result_dir}/ChAll.TXT"
-    
-    if not os.path.exists(dump_file):
-        print(f"Error in opening result file: {dump_file}")
-        return
+    if os.path.exists(dump_file):
+        with open(dump_file, 'r') as in_file:
+            print(f"Opened dump file: {dump_file}") 
+            lines = in_file.readlines()
     else:
-        print(f"Opened dump file: {dump_file}")
+        print(f"Error in opening result file: {dump_file}")
     
+    max_rx = 7
+    rxout = [4, 5, 6, 7, 0, 1, 2]
+
     max_daq = 9
-    RXchan = [5, 6, 7, 12, 1, 2, 3, 4, 11]
-    
-    start_time = [0] * max_daq
-    end_time = [0] * max_daq
+    rxchan = [5, 6, 7, 12, 1, 2, 3, 4, 11]
+
+    start_time = [None] * max_daq
+    end_time = [None] * max_daq
     chan_event = [0] * max_daq
     start_gen = [0] * max_daq
-    start_obs = [0] * max_daq
     end_gen = [0] * max_daq
+    start_obs = [0] * max_daq
     end_obs = [0] * max_daq
+
+    max_frame = 2000
+
+    h_errcnt = np.zeros((33, 9))
+    h_errmask = np.zeros((32, 9))
+
+    num_line = 0
+    ind_frame = 0
+    dbg = True 
     
-    numline = 0
-    DBG = 1
-    
-    # Loop over config file lines
-    with open(dump_file, 'r') as in_file:
-        for line in in_file:
-            numline += 1
-            if DBG:
+    with open(f"{result_dir}/summary.txt", 'w') as out_file:
+        out_file.write("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs    Ninj/   Nobs\n")
+
+        for line in lines:
+            num_line += 1
+            if dbg:
                 print(line.strip())
-            
-            # Parse lines into parameters
-            if line.strip():
-                ch_date_time = line[:26]
-                ch_counters = line[27:].strip()
-                
-                # Extract data from the counters string
-                try:
-                    chan, injgen, injobs, delCRC, timeStamp, expCode, obsCode, ErrMask, CDC32 = map(int, ch_counters.split())
-                except ValueError:
-                    print(f"Skipping line due to parsing error: {line}")
-                    continue
-                
-                errcnt = 0
-                for m in range(32):
-                    if (ErrMask & (1 << m)) != 0:
-                        errcnt += 1
-                
-                # First entry of a channel
-                if chan_event[chan] == 0:
-                    start_time[chan] = parse_datetime(ch_date_time, "%F %T")
-                    start_gen[chan] = injgen
-                    start_obs[chan] = injobs
-                
-                end_time[chan] = parse_datetime(ch_date_time, "%F %T")
-                end_gen[chan] = injgen
-                end_obs[chan] = injobs
-                chan_event[chan] += 1
-    
-    print(f"End of file with {numline} lines")
-    print("End Run Summary")
-    print(f"{'DAQ':<4} {'Lane':<6} {'Nevt':<5} {'Date time':<17} {'Start/End':<12} {'dT(min)':<8} {'Start Inj/Obs':<15} {'End Inj/Obs':<15} {'Ninj':<8} {'Nobs':<8}")
-    
-    for j in range(max_daq):
-        ch_chan = f"RX{RXchan[j]}" if RXchan[j] < 10 else f"TX{RXchan[j]-10}"
-        
-        if chan_event[j] == 0:
-            print(f"Ch{j:<2} {ch_chan:<4} {chan_event[j]:<5}")
-        else:
-            tstart = format_datetime(start_time[j], "%F %T")
-            tend = format_datetime(end_time[j], "%T")
-            
-            # Only calculate delta if both start_time and end_time are valid
-            if tstart and tend:
-                del_minute = (end_time[j] - start_time[j]) / 60.0
+
+            if not line.strip():
+                continue
+
+            ch_date_time = line[:26]
+            ch_counters = line[27:].strip()
+            tokens = ch_counters.split()
+            chan, injgen, injobs, delCRC, timeStamp, expCode, obsCode, ErrMask, CDC32 = map(int, tokens[:5]) + list(map(lambda x: int(x, 16), tokens[5:8])) + [int(tokens[8])]
+
+            errcnt = 0
+            for m in range(32):
+                if (ErrMask & (1 << m)) != 0:
+                    errcnt += 1
+                    h_errmask[m, chan] += 1
+
+            h_errcnt[errcnt, chan] += 1
+
+            if chan_event[chan] == 0:
+                start_time[chan] = parse_datetime(ch_date_time)
+                start_gen[chan] = injgen
+                start_obs[chan] = injobs
+
+            end_time[chan] = parse_datetime(ch_date_time)
+            end_gen[chan] = injgen
+            end_obs[chan] = injobs
+
+            chan_event[chan] += 1
+
+        out_file.write(f"End of file with {num_line} lines.\n")
+        out_file.write("End Run Summary\n")
+
+        for j in range(max_daq):
+            ch_chan = f"RX{rxchan[j]}" if rxchan[j] < 10 else f"TX{rxchan[j] - 10}"
+
+            if chan_event[j] == 0:
+                out_file.write(f"Ch{j} {ch_chan:4} {chan_event[j]:5}\n")
             else:
-                del_minute = 0.0
-            
-            # Handle cases where values might be None
-            start_inj_obs = f"{start_gen[j]}/{start_obs[j]}"
-            end_inj_obs = f"{end_gen[j]}/{end_obs[j]}"
-            ninj = end_gen[j] - start_gen[j]
-            nobs = end_obs[j] - start_obs[j]
-            
-            print(f"Ch{j:<2} {ch_chan:<4} {chan_event[j]:<5} {tstart:<17}/{tend:<9} {del_minute:6.1f} {start_inj_obs:6} {end_inj_obs:10} {ninj:6} {nobs:7}")
+                tstart = date_time_str(start_time[j], "%Y-%m-%d %H:%M:%S")
+                tend = date_time_str(end_time[j], "%H:%M:%S")
+
+                del_minute = (end_time[j] - start_time[j]).total_seconds() / 60
+
+                out_file.write(f"Ch{j} {ch_chan:4} {chan_event[j]:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
+                               f"{start_gen[j]:6} / {start_obs[j]:10}  {end_gen[j]:6} / {end_obs[j]:10}  "
+                               f"{end_gen[j] - start_gen[j]:6} / {end_obs[j] - start_obs[j]:7}\n")
+
+    print(f"Summary written to {result_dir}/summary.txt")
+
+
 
 # # define a receive data function
 def Receive_data(store_dict, num_file):
