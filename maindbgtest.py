@@ -72,14 +72,6 @@ def print_bytes_hex(data):
     lin = ['0x%02X' % i for i in data]
     print(" ".join(lin))
 
-def parse_datetime(datetime_string, format_str):
-    dt_obj = datetime.strptime(datetime_string, format_str)
-    return dt_obj.timestamp()
-
-def format_datetime(timestamp, format_str):
-    dt_obj = datetime.fromtimestamp(timestamp)
-    return dt_obj.strftime(format_str)
-
 def generate_summary(result_dir):
     
     dump_file = f"{result_dir}/ChAll.TXT"
@@ -89,6 +81,7 @@ def generate_summary(result_dir):
             lines = in_file.readlines()
     else:
         print(f"Error in opening result file: {dump_file}")
+        return  
     
     max_rx = 7
     rxout = [4, 5, 6, 7, 0, 1, 2]
@@ -138,11 +131,11 @@ def generate_summary(result_dir):
             h_errcnt[errcnt, chan] += 1
 
             if chan_event[chan] == 0:
-                start_time[chan] = parse_datetime(ch_date_time)
+                start_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S").timestamp()
                 start_gen[chan] = injgen
                 start_obs[chan] = injobs
 
-            end_time[chan] = parse_datetime(ch_date_time)
+            end_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S").timestamp()
             end_gen[chan] = injgen
             end_obs[chan] = injobs
 
@@ -157,10 +150,10 @@ def generate_summary(result_dir):
             if chan_event[j] == 0:
                 out_file.write(f"Ch{j} {ch_chan:4} {chan_event[j]:5}\n")
             else:
-                tstart = date_time_str(start_time[j], "%Y-%m-%d %H:%M:%S")
-                tend = date_time_str(end_time[j], "%H:%M:%S")
+                tstart = datetime.fromtimestamp(start_time[j]).strftime("%Y-%m-%d %H:%M:%S")
+                tend = datetime.fromtimestamp(end_time[j]).strftime("%H:%M:%S")
 
-                del_minute = (end_time[j] - start_time[j]).total_seconds() / 60
+                del_minute = (end_time[j] - start_time[j]) / 60
 
                 out_file.write(f"Ch{j} {ch_chan:4} {chan_event[j]:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
                                f"{start_gen[j]:6} / {start_obs[j]:10}  {end_gen[j]:6} / {end_obs[j]:10}  "
