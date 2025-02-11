@@ -124,10 +124,10 @@ def generate_summary(result_dir):
                 print(f"Error parsing line: {line}. Error: {e}")
                 continue
 
-        #     errcnt = 0
-        #     for m in range(32):
-        #         if (ErrMask & (1 << m)) != 0:
-        #             errcnt += 1
+            errcnt = 0
+            for m in range(32):
+                if (ErrMask & (1 << m)) != 0:
+                    errcnt += 1
 
         #     if chan_event[chan] == 0:
         #         try:
