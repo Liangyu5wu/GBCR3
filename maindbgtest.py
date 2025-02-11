@@ -113,16 +113,16 @@ def generate_summary(result_dir):
             if not line.strip():
                 continue
 
-        #     ch_date_time = line[:26]
-        #     ch_counters = line[27:].strip()
-        #     tokens = ch_counters.split()
+            ch_date_time = line[:26]
+            ch_counters = line[27:].strip()
+            tokens = ch_counters.split()
 
-        #     try:
-        #         chan, injgen, injobs, delCRC, timeStamp, expCode, obsCode, ErrMask, CDC32 = ( int(tokens[0]), int(tokens[1]), int(tokens[2]), int(tokens[3]), 
-        #         int(tokens[4]), int(tokens[5], 16), int(tokens[6], 16), int(tokens[7], 16), int(tokens[8]))
-        #     except ValueError as e:
-        #         print(f"Error parsing line: {line}. Error: {e}")
-        #         continue
+            try:
+                chan, injgen, injobs, delCRC, timeStamp, expCode, obsCode, ErrMask, CDC32 = ( int(tokens[0]), int(tokens[1]), int(tokens[2]), int(tokens[3]), 
+                int(tokens[4]), int(tokens[5], 16), int(tokens[6], 16), int(tokens[7], 16), int(tokens[8]))
+            except ValueError as e:
+                print(f"Error parsing line: {line}. Error: {e}")
+                continue
 
         #     errcnt = 0
         #     for m in range(32):
