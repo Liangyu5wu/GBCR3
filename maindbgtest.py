@@ -31,14 +31,9 @@ port = 1024  # port number
 # 
 # ------------------------------------------------------------------#
 def main():
-    # #  Create a directory named path with date of today
-    userdefinedir = "GBCR2_SEE_Test"
-    userdefinedir_log = "%s_log" % userdefinedir
 
     today = datetime.date.today()
-    # TimeD = time.localtime()
     TimeD = time.strftime("%H-%M-%S", time.localtime())
-    # todaystr = today.isoformat() + "-" + TimeD + "_Results"
     todaystr = "QAResults"
     timestr = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
     try:
@@ -46,24 +41,19 @@ def main():
         print("Directory %s was created!" % todaystr)
     except FileExistsError:
         print("Directory %s already exists!" % todaystr)
-    # userdefine_dir = todaystr + "./%s"%userdefinedir
-    # userdefine_dir = todaystr + "./%s/"%userdefinedir + TimeD
+
     userdefine_dir = todaystr + "/" + timestr
     print(userdefine_dir)
     try:
         os.mkdir(userdefine_dir)
     except FileExistsError:
         print("User define directories already created!!!")
-
     num_file = int(sys.argv[1])  # total files will be read back
     store_dict = userdefine_dir
 
-    # 20220428 dbw for single #queue = Queue()  # define a queue
-    # 20220428 #receive_data = Receive_data('Receive_data', queue, num_file)  # initial receive_data class
     Receive_data(store_dict, num_file)
 
-    print(" line 66, All jobs are done!")
-# end def main
+    print(" line 56, All jobs are done!")
 
 def print_bytes_hex(data):
     lin = ['0x%02X' % i for i in data]
