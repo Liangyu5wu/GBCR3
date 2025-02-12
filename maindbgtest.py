@@ -12,7 +12,6 @@ import numpy as np
 import pyvisa as visa
 from queue import Queue
 from queue import Empty
-from numpy.compat import long
 from command_interpret import *
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
