@@ -7,23 +7,20 @@ import time
 import datetime
 import struct
 import socket
-from queue import Queue
-from queue import Empty  ##
 import threading
 import numpy as np
-#from this import i
-
-from numpy.compat import long
-
-from GBCR3_Reg import *
 import pyvisa as visa
+from queue import Queue
+from queue import Empty
+from numpy.compat import long
 from command_interpret import *
-import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 import pandas as pd
 from collections import defaultdict
+
+from GBCR3_Reg import *
 
 from crc32_8 import crc32_8
 
