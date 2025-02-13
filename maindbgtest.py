@@ -148,6 +148,8 @@ def generate_summary(result_dir):
         ch_chan = f"RX{rxchan[j]}" if rxchan[j] < 10 else f"TX{rxchan[j] - 10}"
 
         if chan_event[j] == 0:
+            with open(f"{result_dir}/summary.txt", 'a') as out_file:
+                out_file.write(f"Ch{j} {ch_chan:4} {chan_event[j]:5}")
             print(f"Ch{j} {ch_chan:4} {chan_event[j]:5}")
         else:
             tstart = 0
