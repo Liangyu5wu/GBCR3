@@ -128,7 +128,7 @@ def generate_summary(result_dir):
 
         out_file.write(f"End of file with {num_line} lines.\n")
         out_file.write("End Run Summary\n")
-        printf("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs    Ninj/   Nobs\n");
+        print("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs    Ninj/   Nobs\n");
 
         # for j in range(max_daq):
         #     ch_chan = f"RX{rxchan[j]}" if rxchan[j] < 10 else f"TX{rxchan[j] - 10}"
