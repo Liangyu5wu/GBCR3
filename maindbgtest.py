@@ -149,14 +149,17 @@ def generate_summary(result_dir):
 
         if chan_event[j] == 0:
             with open(f"{result_dir}/summary.txt", 'a') as out_file:
-                out_file.write(f"Ch{j} {ch_chan:4} {chan_event[j]:5}")
+                out_file.write(f"Ch{j} {ch_chan:4} {chan_event[j]:5}\n")
             print(f"Ch{j} {ch_chan:4} {chan_event[j]:5}")
         else:
             tstart = 0
             tend = 0
 
             del_minute = (end_time[j] - start_time[j]) / 60 if end_time[j] and start_time[j] else 0
-
+            with open(f"{result_dir}/summary.txt", 'a') as out_file:
+                out_file.write(f"Ch{j} {ch_chan:4} {chan_event[j]:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
+                  f"{start_gen[j]:6} / {start_obs[j]:10}  {end_gen[j]:6} / {end_obs[j]:10}  "
+                  f"{end_gen[j] - start_gen[j]:6} / {end_obs[j] - start_obs[j]:7}\n")
             print(f"Ch{j} {ch_chan:4} {chan_event[j]:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
                   f"{start_gen[j]:6} / {start_obs[j]:10}  {end_gen[j]:6} / {end_obs[j]:10}  "
                   f"{end_gen[j] - start_gen[j]:6} / {end_obs[j] - start_obs[j]:7}")
