@@ -117,7 +117,18 @@ def generate_summary(result_dir):
 
             if chan_event[chan] == 0:
                 ch_date_time_trimmed = ch_date_time.split('.')[0]
-                start_time[chan] = datetime.strptime(ch_date_time_trimmed, "%Y-%m-%d %H:%M:%S")
+                if len(ch_date_time_trimmed) != 19:
+                        raise ValueError(f"Invalid length for datetime string: '{ch_date_time_trimmed}'")
+
+                    year = int(ch_date_time_trimmed[0:4])
+                    month = int(ch_date_time_trimmed[5:7])
+                    day = int(ch_date_time_trimmed[8:10])
+                    hour = int(ch_date_time_trimmed[11:13])
+                    minute = int(ch_date_time_trimmed[14:16])
+                    second = int(ch_date_time_trimmed[17:19])
+
+                    print(f"Parsed values -> year: {year}, month: {month}, day: {day}, hour: {hour}, minute: {minute}, second: {second}")
+                #start_time[chan] = datetime.strptime(ch_date_time_trimmed, "%Y-%m-%d %H:%M:%S")
                 start_gen[chan] = injgen
                 start_obs[chan] = injobs
 
