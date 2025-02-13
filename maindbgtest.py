@@ -90,7 +90,7 @@ def generate_summary(result_dir):
     dbg = True 
     
     with open(f"{result_dir}/summary.txt", 'w') as out_file:
-        out_file.write("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs    Ninj/   Nobs\n")
+        out_file.write("DAQ Lane  Nevt  Date time   Start/ End       dT(min)   Start Inj/Obs     End Inj/Obs             Ninj/    Nobs\n")
 
         for line in lines:
             num_line += 1
@@ -127,8 +127,8 @@ def generate_summary(result_dir):
             chan_event[chan] += 1
 
         out_file.write(f"End of file with {num_line} lines.\n")
-        out_file.write("End Run Summary\n")
-        print("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs    Ninj/   Nobs\n");
+        print("End Run Summary\n")
+        print("DAQ Lane  Nevt  Date time   Start/ End       dT(min)   Start Inj/Obs     End Inj/Obs             Ninj/    Nobs\n");
 
     print(f"Summary")
 
@@ -137,15 +137,22 @@ def generate_summary(result_dir):
 
         if chan_event[j] == 0:
             print(f"Ch{j} {ch_chan:4} {chan_event[j]:5}")
+            summary_line = f"Ch{j} {ch_chan:4} {chan_event[j]:5}\n"
         else:
             tstart = 0  # Placeholder, as original 'tstart' implementation was commented
             tend = 0  # Placeholder, as original 'tend' implementation was commented
 
             del_minute = (end_time[j] - start_time[j]) / 60 if end_time[j] and start_time[j] else 0
 
+            summary_line = (f"Ch{j} {ch_chan:4} {chan_event[j]:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
+                            f"{start_gen[j]:6} / {start_obs[j]:10}  {end_gen[j]:6} / {end_obs[j]:10}  "
+                            f"{end_gen[j] - start_gen[j]:6} / {end_obs[j] - start_obs[j]:7}\n")
+
             print(f"Ch{j} {ch_chan:4} {chan_event[j]:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
                   f"{start_gen[j]:6} / {start_obs[j]:10}  {end_gen[j]:6} / {end_obs[j]:10}  "
                   f"{end_gen[j] - start_gen[j]:6} / {end_obs[j] - start_obs[j]:7}")
+            print(summary_line.strip())
+            out_file.write(summary_line)
 
         #for j in range(max_daq):
         #     ch_chan = f"RX{rxchan[j]}" if rxchan[j] < 10 else f"TX{rxchan[j] - 10}"
@@ -166,7 +173,6 @@ def generate_summary(result_dir):
 
 
 
-# # define a receive data function
 def Receive_data(store_dict, num_file):
     # begin iic initilization -----------------------------------------------------------------------------------#
     # write, read back, and compare
