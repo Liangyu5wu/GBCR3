@@ -117,34 +117,18 @@ def generate_summary(result_dir):
 
             if chan_event[chan] == 0:
                 ch_date_time_trimmed = ch_date_time.split('.')[0]
-                ch_date_time_trimmed = ch_date_time_trimmed.strip()
-                year = int(ch_date_time_trimmed[0:4])
-                month = int(ch_date_time_trimmed[5:7])
-                day = int(ch_date_time_trimmed[8:10])
-                hour = int(ch_date_time_trimmed[11:13])
-                minute = int(ch_date_time_trimmed[14:16])
-                second = int(ch_date_time_trimmed[17:19])
-
-                print(f"Parsed values as -> year: {year}, month: {month}, day: {day}, hour: {hour}, minute: {minute}, second: {second}")
-                parsed_time = datetime(year, month, day, hour, minute, second)
-                start_time[chan] = parsed_time
-                print(f"Successfully parsed time for channel {chan}: {parsed_time}")
                 #start_time[chan] = datetime.strptime(ch_date_time_trimmed, "%Y-%m-%d %H:%M:%S")
                 start_gen[chan] = injgen
                 start_obs[chan] = injobs
 
-        #     try:
-        #         end_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
-        #     except ValueError as e:
-        #         print(f"Error parsing datetime: {ch_date_time}. Error: {e}")
-        #     continue  
-        
-        # end_gen[chan] = injgen
-        # end_obs[chan] = injobs
-        # chan_event[chan] += 1
+            #end_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
+            end_gen[chan] = injgen
+            end_obs[chan] = injobs
+            chan_event[chan] += 1
 
-        # out_file.write(f"End of file with {num_line} lines.\n")
-        # out_file.write("End Run Summary\n")
+        out_file.write(f"End of file with {num_line} lines.\n")
+        out_file.write("End Run Summary\n")
+        printf("DAQ  Lane Nevt  Date time     Start/ End      dT(min)  Start    Inj/Obs   End      Inj/Obs    Ninj/   Nobs\n");
 
         # for j in range(max_daq):
         #     ch_chan = f"RX{rxchan[j]}" if rxchan[j] < 10 else f"TX{rxchan[j] - 10}"
