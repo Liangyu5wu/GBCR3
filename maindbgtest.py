@@ -89,45 +89,31 @@ def generate_summary(result_dir):
     ind_frame = 0
     dbg = True 
     
-    with open(f"{result_dir}/summary.txt", 'w') as out_file:
-        out_file.write("DAQ Lane  Nevt  Date time   Start/ End       dT(min)   Start Inj/Obs     End Inj/Obs             Ninj/    Nobs\n")
 
-        for line in lines:
-            num_line += 1
-            if dbg:
-                print(line.strip())
-            if not line.strip():
-                continue
+    for line in lines:
+        num_line += 1
+        if dbg:
+            print(line.strip())
+        if not line.strip():
+            continue
 
-            ch_date_time = line[:26]
-            ch_counters = line[27:].strip()
-            tokens = ch_counters.split()
+        ch_date_time = line[:26]
+        ch_counters = line[27:].strip()
+        tokens = ch_counters.split()
 
-            try:
-                chan, injgen, injobs, delCRC, timeStamp, expCode, obsCode, ErrMask, CDC32 = ( int(tokens[0]), int(tokens[1]), int(tokens[2]), int(tokens[3]), 
+        try:
+            chan, injgen, injobs, delCRC, timeStamp, expCode, obsCode, ErrMask, CDC32 = ( int(tokens[0]), int(tokens[1]), int(tokens[2]), int(tokens[3]), 
                 int(tokens[4]), int(tokens[5], 16), int(tokens[6], 16), int(tokens[7], 16), int(tokens[8]))
-            except ValueError as e:
-                print(f"Error parsing line: {line}. Error: {e}")
-                continue
+        except ValueError as e:
+            print(f"Error parsing line: {line}. Error: {e}")
+            continue
 
-            errcnt = 0
-            for m in range(32):
-                if (ErrMask & (1 << m)) != 0:
-                    errcnt += 1
+        errcnt = 0
+        for m in range(32):
+            if (ErrMask & (1 << m)) != 0:
+                errcnt += 1
 
-            if chan_event[chan] == 0:
-                ch_date_time_trimmed = ch_date_time.split('.')[0]
-                year = int(ch_date_time_trimmed[0:4])
-                month = int(ch_date_time_trimmed[5:7])
-                day = int(ch_date_time_trimmed[8:10])
-                hour = int(ch_date_time_trimmed[11:13])
-                minute = int(ch_date_time_trimmed[14:16])
-                second = int(ch_date_time_trimmed[17:19])
-                start_time[chan] = day*24*60*60 + hour*60*60 + minute*60 + second
-                start_gen[chan] = injgen
-                start_obs[chan] = injobs
-
-            #end_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
+        if chan_event[chan] == 0:
             ch_date_time_trimmed = ch_date_time.split('.')[0]
             year = int(ch_date_time_trimmed[0:4])
             month = int(ch_date_time_trimmed[5:7])
@@ -135,16 +121,28 @@ def generate_summary(result_dir):
             hour = int(ch_date_time_trimmed[11:13])
             minute = int(ch_date_time_trimmed[14:16])
             second = int(ch_date_time_trimmed[17:19])
-            end_time[chan] = day*24*60*60 + hour*60*60 + minute*60 + second
-            end_gen[chan] = injgen
-            end_obs[chan] = injobs
-            chan_event[chan] += 1
+            start_time[chan] = day*24*60*60 + hour*60*60 + minute*60 + second
+            start_gen[chan] = injgen
+            start_obs[chan] = injobs
 
+        #end_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
+        ch_date_time_trimmed = ch_date_time.split('.')[0]
+        year = int(ch_date_time_trimmed[0:4])
+        month = int(ch_date_time_trimmed[5:7])
+        day = int(ch_date_time_trimmed[8:10])
+        hour = int(ch_date_time_trimmed[11:13])
+        minute = int(ch_date_time_trimmed[14:16])
+        second = int(ch_date_time_trimmed[17:19])
+        end_time[chan] = day*24*60*60 + hour*60*60 + minute*60 + second
+        end_gen[chan] = injgen
+        end_obs[chan] = injobs
+        chan_event[chan] += 1
+
+    print("End Run Summary\n")
+    print("DAQ Lane  Nevt  Date time   Start/ End       dT(min)   Start Inj/Obs     End Inj/Obs             Ninj/    Nobs\n");
+    with open(f"{result_dir}/summary.txt", 'w') as out_file:
         out_file.write(f"End of file with {num_line} lines.\n")
-        print("End Run Summary\n")
-        print("DAQ Lane  Nevt  Date time   Start/ End       dT(min)   Start Inj/Obs     End Inj/Obs             Ninj/    Nobs\n");
-
-    print(f"Summary")
+        out_file.write("DAQ Lane  Nevt  Date time   Start/ End       dT(min)   Start Inj/Obs     End Inj/Obs             Ninj/    Nobs\n")
 
     for j in range(max_daq):
         ch_chan = f"RX{rxchan[j]}" if rxchan[j] < 10 else f"TX{rxchan[j] - 10}"
@@ -164,7 +162,6 @@ def generate_summary(result_dir):
             #                f"{start_gen[j]:6} / {start_obs[j]:10}  {end_gen[j]:6} / {end_obs[j]:10}  "
             #                f"{end_gen[j] - start_gen[j]:6} / {end_obs[j] - start_obs[j]:7}\n")
             
-            out_file.write(f"Ch{j} \n")
 
         #for j in range(max_daq):
         #     ch_chan = f"RX{rxchan[j]}" if rxchan[j] < 10 else f"TX{rxchan[j] - 10}"
