@@ -75,8 +75,8 @@ def generate_summary(result_dir):
     max_daq = 9
     rxchan = [5, 6, 7, 12, 1, 2, 3, 4, 11]
 
-    start_time = [None] * max_daq
-    end_time = [None] * max_daq
+    start_time = [0] * max_daq
+    end_time = [0] * max_daq
     chan_event = [0] * max_daq
     start_gen = [0] * max_daq
     end_gen = [0] * max_daq
@@ -117,11 +117,25 @@ def generate_summary(result_dir):
 
             if chan_event[chan] == 0:
                 ch_date_time_trimmed = ch_date_time.split('.')[0]
-                #start_time[chan] = datetime.strptime(ch_date_time_trimmed, "%Y-%m-%d %H:%M:%S")
+                year = int(ch_date_time_trimmed[0:4])
+                month = int(ch_date_time_trimmed[5:7])
+                day = int(ch_date_time_trimmed[8:10])
+                hour = int(ch_date_time_trimmed[11:13])
+                minute = int(ch_date_time_trimmed[14:16])
+                second = int(ch_date_time_trimmed[17:19])
+                start_time[chan] = day*24*60*60 + hour*60*60 + minute*60 + second
                 start_gen[chan] = injgen
                 start_obs[chan] = injobs
 
             #end_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
+            ch_date_time_trimmed = ch_date_time.split('.')[0]
+            year = int(ch_date_time_trimmed[0:4])
+            month = int(ch_date_time_trimmed[5:7])
+            day = int(ch_date_time_trimmed[8:10])
+            hour = int(ch_date_time_trimmed[11:13])
+            minute = int(ch_date_time_trimmed[14:16])
+            second = int(ch_date_time_trimmed[17:19])
+            end_time[chan] = day*24*60*60 + hour*60*60 + minute*60 + second
             end_gen[chan] = injgen
             end_obs[chan] = injobs
             chan_event[chan] += 1
@@ -138,8 +152,8 @@ def generate_summary(result_dir):
         if chan_event[j] == 0:
             print(f"Ch{j} {ch_chan:4} {chan_event[j]:5}")
         else:
-            tstart = 0  # Placeholder, as original 'tstart' implementation was commented
-            tend = 0  # Placeholder, as original 'tend' implementation was commented
+            tstart = 0
+            tend = 0
 
             del_minute = (end_time[j] - start_time[j]) / 60 if end_time[j] and start_time[j] else 0
 
