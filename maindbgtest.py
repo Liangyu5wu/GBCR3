@@ -137,22 +137,18 @@ def generate_summary(result_dir):
 
         if chan_event[j] == 0:
             print(f"Ch{j} {ch_chan:4} {chan_event[j]:5}")
-            summary_line = f"Ch{j} {ch_chan:4} {chan_event[j]:5}\n"
         else:
             tstart = 0  # Placeholder, as original 'tstart' implementation was commented
             tend = 0  # Placeholder, as original 'tend' implementation was commented
 
             del_minute = (end_time[j] - start_time[j]) / 60 if end_time[j] and start_time[j] else 0
 
-            summary_line = (f"Ch{j} {ch_chan:4} {chan_event[j]:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
-                            f"{start_gen[j]:6} / {start_obs[j]:10}  {end_gen[j]:6} / {end_obs[j]:10}  "
-                            f"{end_gen[j] - start_gen[j]:6} / {end_obs[j] - start_obs[j]:7}\n")
-
             print(f"Ch{j} {ch_chan:4} {chan_event[j]:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
                   f"{start_gen[j]:6} / {start_obs[j]:10}  {end_gen[j]:6} / {end_obs[j]:10}  "
                   f"{end_gen[j] - start_gen[j]:6} / {end_obs[j] - start_obs[j]:7}")
-            print(summary_line.strip())
-            out_file.write(summary_line)
+            out_file.write(f"Ch{j} {ch_chan:4} {chan_event[j]:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
+                  f"{start_gen[j]:6} / {start_obs[j]:10}  {end_gen[j]:6} / {end_obs[j]:10}  "
+                  f"{end_gen[j] - start_gen[j]:6} / {end_obs[j] - start_obs[j]:7}")
 
         #for j in range(max_daq):
         #     ch_chan = f"RX{rxchan[j]}" if rxchan[j] < 10 else f"TX{rxchan[j] - 10}"
