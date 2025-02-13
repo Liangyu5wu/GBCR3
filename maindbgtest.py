@@ -160,6 +160,9 @@ def generate_summary(result_dir):
             print(f"Ch{j} {ch_chan:4} {chan_event[j]:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
                   f"{start_gen[j]:6} / {start_obs[j]:10}  {end_gen[j]:6} / {end_obs[j]:10}  "
                   f"{end_gen[j] - start_gen[j]:6} / {end_obs[j] - start_obs[j]:7}")
+            out_file.write(f"Ch{j} {ch_chan:4} {chan_event[j]:5} {tstart:17} / {tend:9} {del_minute:6.1f} "
+                           f"{start_gen[j]:6} / {start_obs[j]:10}  {end_gen[j]:6} / {end_obs[j]:10}  "
+                           f"{end_gen[j] - start_gen[j]:6} / {end_obs[j] - start_obs[j]:7}\n")
 
         #for j in range(max_daq):
         #     ch_chan = f"RX{rxchan[j]}" if rxchan[j] < 10 else f"TX{rxchan[j] - 10}"
