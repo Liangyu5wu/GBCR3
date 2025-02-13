@@ -116,7 +116,9 @@ def generate_summary(result_dir):
                     errcnt += 1
 
             if chan_event[chan] == 0:
-                start_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
+                ch_date_time_trimmed = ch_date_time.split('.')[0]
+                start_time[chan] = datetime.strptime(ch_date_time_trimmed, "%Y-%m-%d %H:%M:%S")
+                #start_time[chan] = datetime.strptime(ch_date_time, "%Y-%m-%d %H:%M:%S")
                 start_gen[chan] = injgen
                 start_obs[chan] = injobs
 
